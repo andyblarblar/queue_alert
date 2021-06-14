@@ -6,7 +6,7 @@ mod routes;
 
 use actix_web::*;
 use actix_files::{Files};
-use simplelog::{Config, LevelFilter};
+use simplelog::{Config, LevelFilter, ConfigBuilder};
 use actix_web::middleware::Logger;
 use std::sync::Arc;
 
@@ -29,7 +29,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::ping)//TODO remove this
             .service(Files::new("/","./www").index_file("index.html"))//Must be last, serves static site
     })
-        .bind(("127.0.0.1", 8080))?
+        .bind(("0.0.0.0", 8080))?
         .run()
         .await
 }

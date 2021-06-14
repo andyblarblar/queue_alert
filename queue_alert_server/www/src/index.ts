@@ -13,10 +13,6 @@ let pushSub: PushSubscription
 //First setup service worker
 async function main() {
     (await registerServiceWorker()).expect("Unable to create service worker!");
-
-    let permRes = await askPermission();
-
-    permRes.expect("User rejected notifications!")
 }
 
 main().catch()
@@ -24,6 +20,10 @@ main().catch()
 //Add sub events
 const subBtn = document.getElementById("sub-btn");
 subBtn.addEventListener('click', async () => {
+    let permRes = await askPermission();
+
+    permRes.expect("User rejected notifications!")
+
     pushSub = await subscribeUserToPush();
     let res = await registerWithBackend(pushSub);
 

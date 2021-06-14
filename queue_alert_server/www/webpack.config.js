@@ -27,6 +27,14 @@ module.exports = {
               {
                   from: "index.html",
                   to: "index.html"
+              },
+              {
+                  from: "./icons",
+                  to: "icons"
+              },
+              {
+                  from: "./manifest.json",
+                  to: "manifest.json"
               }
           ]
       }),
