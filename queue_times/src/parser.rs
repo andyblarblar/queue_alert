@@ -12,15 +12,14 @@ use url::Url;
 use crate::error::*;
 use crate::model::*;
 
-//TODO make a parser for the main page of queue time to get parks and their url
 /// Defines how a park's rides should be parsed out of an HTML page.
 pub trait ParkParser {
-    /// Creates a new parser on the passed HTML string.
-    fn from_html(html: String) -> Self;
+    /// Builds all components needed for parsing eg. selectors or regex.
+    fn new() -> Self;
 
-    /// Parses all rides and their current wait. Errors if HTML is unable to be properly parsed, but
-    /// does not verify if valid.
-    fn get_ride_times(&self) -> Result<Vec<RideTime>>;
+    /// Parses all rides and their current wait from the passed html string.
+    /// Errors if HTML is unable to be properly parsed, but does not verify if valid.
+    fn get_ride_times(&self, html: &str) -> Result<Vec<RideTime>>;
 }
 
 /// Parser that can currently parse all parks.
@@ -31,9 +30,9 @@ pub trait ParkParser {
 /// //Gets Cedar Point's ride page
 /// let html_str = reqwest::blocking::get("https://queue-times.com/en-US/parks/50/queue_times")?.text()?;
 ///
-/// let parser = GenericParkParser::from_html(html_str);
+/// let parser = GenericParkParser::new();
 ///
-/// let rides = parser.get_ride_times()?;
+/// let rides = parser.get_ride_times(&html_str)?;
 ///
 /// println!("{:?}", rides)
 /// ```
@@ -41,22 +40,22 @@ pub trait ParkParser {
 pub struct GenericParkParser {
     /// Selects rides for any park page.
     selector: Selector,
-    html: Html,
 }
 
 impl ParkParser for GenericParkParser {
-    fn from_html(html: String) -> Self {
+    fn new() -> Self {
         let selector = Selector::parse("nav.panel > a > span:not(.has-text-grey)").unwrap();
 
         GenericParkParser {
             selector,
-            html: Html::parse_document(&html),
         }
     }
 
-    fn get_ride_times(&self) -> Result<Vec<RideTime>> {
+    fn get_ride_times(&self, html: &str) -> Result<Vec<RideTime>> {
+        let html = Html::parse_document(&html);
+        let all_rides = html.select(&self.selector);
+
         let mut ride_times = Vec::new();
-        let all_rides = self.html.select(&self.selector);
         let mut name_being_processed = true;
         let mut temp_ride_time = RideTime::default();
         let mut all_rides = all_rides.peekable();
@@ -105,10 +104,11 @@ impl ParkParser for GenericParkParser {
                             bail!(ErrorKind::WaitTimeParse(time.to_string()))
                         }
 
-                        let time_int_res = split_str_min.unwrap().parse::<u16>();
+                        //parse as i16 because warner bros once set their time to '-2 mins' ಠ_ಠ
+                        let time_int_res = split_str_min.unwrap().parse::<i16>();
 
                         match time_int_res {
-                            Ok(time) => RideStatus::Wait(time),
+                            Ok(time) => RideStatus::Wait(time.unsigned_abs()),
                             Err(_) => {
                                 bail!(ErrorKind::WaitTimeParse(time.to_string()))
                             }
@@ -138,38 +138,37 @@ impl ParkParser for GenericParkParser {
 /// use queue_times::parser::FrontPageParser;
 /// let html = reqwest::blocking::get("https://queue-times.com/en-US/parks/")?.text()?;
 ///
-///  let parser = FrontPageParser::from_html(html);
+/// let parser = FrontPageParser::new();
 ///
-///  let parks = parser.get_park_urls()?;
+/// let parks = parser.get_park_urls(&html)?;
 ///
-///  println!("{:?}", parks)
+/// println!("{:?}", parks)
 /// ```
 #[derive(Clone, Debug, PartialEq)]
 pub struct FrontPageParser {
     /// Selects a park.
     selector: Selector,
-    html: Html,
 }
 
 impl FrontPageParser {
     /// Base Url to the queue times website
     const BASE_URL: &'static str = "https://queue-times.com";
 
-    /// Creates a new parser from a front pages HTML.
-    pub fn from_html(html: String) -> Self {
+    /// Creates a new parser.
+    pub fn new() -> Self {
         let selector = Selector::parse(".panel-block").unwrap();
 
         FrontPageParser {
             selector,
-            html: Html::parse_document(&html),
         }
     }
 
-    /// Returns a map of {park name, Url to park}. Will fail if URLs fail to parse, or URLs are missing
-    /// from the a tag.
-    pub fn get_park_urls(&self) -> Result<HashMap<String, Url>> {
+    /// Creates a map of {park name, Url to park} by parsing the passed html. Will fail if html
+    /// cannot be parsed for parks, but does not verify if overall html is valid.
+    pub fn get_park_urls(&self, html: &str) -> Result<HashMap<String, Url>> {
         let mut park_to_url = HashMap::new();
-        let parks = self.html.select(&self.selector);
+        let html = Html::parse_document(&html);
+        let parks = html.select(&self.selector);
         let mut temp_park = (String::default(), Url::parse(Self::BASE_URL).unwrap());
 
         for park in parks {
@@ -180,7 +179,7 @@ impl FrontPageParser {
                     bail!(ErrorKind::HrefMissing)
                 }
                 Some(link) => {
-                    temp_park.1 = Url::parse(Self::BASE_URL)?.join(link)?;
+                    temp_park.1 = Url::parse(Self::BASE_URL)?.join(&(link.to_string() + "/"))?.join("queue_times")?; //Bec careful messing with this path, '/' matters a lot.
                 }
             }
 
@@ -196,6 +195,16 @@ impl FrontPageParser {
     }
 }
 
+impl Default for FrontPageParser {
+    fn default() -> Self {
+        let selector = Selector::parse(".panel-block").unwrap();
+
+        FrontPageParser {
+            selector,
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -207,9 +216,9 @@ mod test {
             .text()
             .unwrap();
 
-        let parser = GenericParkParser::from_html(html_str);
+        let parser = GenericParkParser::new();
 
-        let rides = parser.get_ride_times().unwrap();
+        let rides = parser.get_ride_times(&html_str).unwrap();
 
         assert!(!rides.is_empty(), "No rides were parsed.");
 
@@ -224,9 +233,9 @@ mod test {
             .text()
             .unwrap();
 
-        let parser = GenericParkParser::from_html(html);
+        let parser = GenericParkParser::new();
 
-        let rides = parser.get_ride_times().unwrap();
+        let rides = parser.get_ride_times(&html).unwrap();
 
         assert!(!rides.is_empty(), "No rides were parsed.");
 
@@ -241,9 +250,9 @@ mod test {
             .text()
             .unwrap();
 
-        let parser = GenericParkParser::from_html(html);
+        let parser = GenericParkParser::new();
 
-        let rides = parser.get_ride_times().unwrap();
+        let rides = parser.get_ride_times(&html).unwrap();
 
         assert!(!rides.is_empty(), "No rides were parsed.");
 
@@ -258,9 +267,9 @@ mod test {
             .text()
             .unwrap();
 
-        let parser = GenericParkParser::from_html(html);
+        let parser = GenericParkParser::new();
 
-        let rides = parser.get_ride_times().unwrap();
+        let rides = parser.get_ride_times(&html).unwrap();
 
         assert!(!rides.is_empty(), "No rides were parsed.");
 
@@ -276,11 +285,11 @@ mod test {
 
         assert!(!html.is_empty(), "Front page was not fetched!");
 
-        let parser = FrontPageParser::from_html(html);
+        let parser = FrontPageParser::new();
 
-        let parks = parser.get_park_urls().unwrap();
+        let parks = parser.get_park_urls(&html).unwrap();
 
-        assert!(!parks.is_empty(), "No parks were parks.");
+        reqwest::blocking::get(parks.get("Cedar Point").unwrap().to_owned()).unwrap();
 
         println!("{:?}", parks)
     }

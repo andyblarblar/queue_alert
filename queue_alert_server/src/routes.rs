@@ -7,7 +7,7 @@ use actix_web::web;
 use web_push::*;
 use std::sync::{RwLock, Arc};
 
-pub type RWVec = RwLock<Vec<SubscriptionInfo>>;
+pub type RWVec = RwLock<Vec<SubscriptionInfo>>;//TODO change to tokio to make async RW
 
 /// VAPID public key to be used with the JS client.
 static PUB_KEY: &str = "BMRl2A0MtIKCETR-kTY9jLD8Kk3rxBZZ6z61BQ845_vasL7RDFnwrwm5axLxnCgfR0StA8bL1PSvzs8l7Pox6Bo=";

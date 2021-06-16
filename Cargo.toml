@@ -1,3 +1,6 @@
 
 [workspace]
 members = ["queue_alert_server", "queue_times"]
+
+[profile.release]
+lto = 'thin'
