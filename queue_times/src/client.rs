@@ -23,7 +23,6 @@
 //! signatures can become quite mangeled. It may be worth looking at the source code for [`QueueTimesClient`]
 //! if the signatures don't seem obvious.
 
-
 use std::collections::HashMap;
 
 use async_trait::async_trait;
@@ -80,7 +79,7 @@ pub trait QueueTimesClient {
 pub struct Client {
     park_parser: GenericParkParser,
     front_parser: FrontPageParser,
-    reqwest_client: reqClient
+    reqwest_client: reqClient,
 }
 
 impl Client {
@@ -88,7 +87,7 @@ impl Client {
         Client {
             park_parser: GenericParkParser::new(),
             front_parser: FrontPageParser::new(),
-            reqwest_client: reqClient::new()
+            reqwest_client: reqClient::new(),
         }
     }
 }
@@ -98,7 +97,7 @@ impl Default for Client {
         Client {
             park_parser: GenericParkParser::new(),
             front_parser: FrontPageParser::new(),
-            reqwest_client: reqClient::new()
+            reqwest_client: reqClient::new(),
         }
     }
 }
@@ -106,7 +105,11 @@ impl Default for Client {
 #[async_trait]
 impl QueueTimesClient for Client {
     async fn get_park_urls(&self) -> Result<HashMap<String, Url>> {
-        let response = self.reqwest_client.get(Url::parse(BASE_URL).unwrap().join("/en-US/parks").unwrap()).send().await?;
+        let response = self
+            .reqwest_client
+            .get(Url::parse(BASE_URL).unwrap().join("/en-US/parks").unwrap())
+            .send()
+            .await?;
         let html = response.text().await?;
 
         self.front_parser.get_park_urls(&html)
@@ -119,7 +122,6 @@ impl QueueTimesClient for Client {
         self.park_parser.get_ride_times(&html)
     }
 }
-
 
 /// Thread-safe cache wrapper for a [`QueueTimesClient`].
 ///
@@ -143,32 +145,39 @@ impl QueueTimesClient for Client {
 ///
 /// println!("The current wait for Millennium Force is: {:?}", mille_wait.status)
 /// ```
-pub struct CachedClient<T> where T : QueueTimesClient + Send + Sync {
+pub struct CachedClient<T>
+where
+    T: QueueTimesClient + Send + Sync,
+{
     client: T,
     /// Cache of park URL to ride times. This should contain all parks at all times.
     cache: dashmap::DashMap<Url, Vec<RideTime>>,
     /// Cache of park name to URL to rides page. Never needs to be updated.
-    parks_cache: RwLock<HashMap<String, Url>>,//use RwLock over dashmap to avoid clone when returning
+    parks_cache: RwLock<HashMap<String, Url>>, //use RwLock over dashmap to avoid clone when returning
     /// Last update to cache, update every 5 minutes.
-    last_updated: RwLock<chrono::DateTime<Local>>
+    last_updated: RwLock<chrono::DateTime<Local>>,
 }
 
-impl <T> CachedClient<T> where T : QueueTimesClient + Send + Sync {
+impl<T> CachedClient<T>
+where
+    T: QueueTimesClient + Send + Sync,
+{
     /// Wraps the passed client with a cache.
     pub fn new(client: T) -> Self {
-
-        CachedClient{
+        CachedClient {
             client,
             cache: dashmap::DashMap::new(),
             parks_cache: RwLock::new(HashMap::new()),
-            last_updated: RwLock::new(Local::now() - Duration::minutes(6))
+            last_updated: RwLock::new(Local::now() - Duration::minutes(6)),
         }
     }
 }
 
 #[async_trait]
-impl <T> QueueTimesClient for CachedClient<T> where T : QueueTimesClient + Send + Sync {
-
+impl<T> QueueTimesClient for CachedClient<T>
+where
+    T: QueueTimesClient + Send + Sync,
+{
     async fn get_park_urls(&self) -> Result<HashMap<String, Url>> {
         //Fill cache if never been used
         if self.parks_cache.read().await.is_empty() {
@@ -187,16 +196,17 @@ impl <T> QueueTimesClient for CachedClient<T> where T : QueueTimesClient + Send 
     }
 
     async fn get_ride_times(&self, park_url: Url) -> Result<Vec<RideTime>> {
-
         {
             let time_lock = self.last_updated.read().await;
 
             //Return cache if website hasn't updated yet
             if (Local::now() - *time_lock) < chrono::Duration::minutes(5) {
-                let rides = self.cache.get(&park_url)
+                let rides = self
+                    .cache
+                    .get(&park_url)
                     .ok_or_else(|| Error::from(ErrorKind::BadUrl(park_url)))?;
 
-                return Ok(rides.value().clone())
+                return Ok(rides.value().clone());
             }
         }
 
@@ -204,7 +214,7 @@ impl <T> QueueTimesClient for CachedClient<T> where T : QueueTimesClient + Send 
         let mut parks = self.get_park_urls().await?;
 
         //Get each park
-        for (_,park_url) in parks.drain() {
+        for (_, park_url) in parks.drain() {
             let times = self.client.get_ride_times(park_url.clone()).await?;
 
             self.cache.insert(park_url, times);
@@ -214,12 +224,11 @@ impl <T> QueueTimesClient for CachedClient<T> where T : QueueTimesClient + Send 
         *time_lock = Local::now();
 
         //Use new cache to respond
-        Ok(
-            self.cache
-                .get(&park_url)
-                .ok_or_else(|| Error::from(ErrorKind::BadUrl(park_url)))?
-                .clone()
-        )
+        Ok(self
+            .cache
+            .get(&park_url)
+            .ok_or_else(|| Error::from(ErrorKind::BadUrl(park_url)))?
+            .clone())
     }
 }
 
@@ -238,10 +247,19 @@ mod tests {
         let client = Client::new();
         let parks = client.get_park_urls().await.unwrap();
         println!("CP URL {}", parks.get("Cedar Point").unwrap().to_string());
-        let cedar_point_waits = client.get_ride_times(parks.get("Cedar Point").unwrap().to_owned()).await.unwrap();
+        let cedar_point_waits = client
+            .get_ride_times(parks.get("Cedar Point").unwrap().to_owned())
+            .await
+            .unwrap();
 
-        let mille_wait = cedar_point_waits.iter().find(|r| r.name == "Millennium Force").unwrap();
-        println!("The current wait for Millennium Force is: {:?}", mille_wait.status)
+        let mille_wait = cedar_point_waits
+            .iter()
+            .find(|r| r.name == "Millennium Force")
+            .unwrap();
+        println!(
+            "The current wait for Millennium Force is: {:?}",
+            mille_wait.status
+        )
     }
 
     #[tokio::test]
@@ -253,29 +271,40 @@ mod tests {
         println!("CP URL {}", parks.get("Cedar Point").unwrap().to_string());
 
         //Repeat to test cache consistency
-        let cedar_point_waits = client.get_ride_times(
-            parks.get("Cedar Point").unwrap().to_owned())
+        let cedar_point_waits = client
+            .get_ride_times(parks.get("Cedar Point").unwrap().to_owned())
             .await
             .unwrap();
 
-        let og_mille_wait = cedar_point_waits.iter().find(|r| r.name == "Millennium Force").unwrap();
-        println!("The current wait for Millennium Force is: {:?}", og_mille_wait.status);
+        let og_mille_wait = cedar_point_waits
+            .iter()
+            .find(|r| r.name == "Millennium Force")
+            .unwrap();
+        println!(
+            "The current wait for Millennium Force is: {:?}",
+            og_mille_wait.status
+        );
 
-        let cedar_point_waits = client.get_ride_times(
-            parks.get("Cedar Point").unwrap().to_owned())
+        let cedar_point_waits = client
+            .get_ride_times(parks.get("Cedar Point").unwrap().to_owned())
             .await
             .unwrap();
 
-        let mille_wait = cedar_point_waits.iter().find(|r| r.name == "Millennium Force").unwrap();
+        let mille_wait = cedar_point_waits
+            .iter()
+            .find(|r| r.name == "Millennium Force")
+            .unwrap();
         assert_eq!(mille_wait, og_mille_wait);
 
-        let cedar_point_waits = client.get_ride_times(
-            parks.get("Cedar Point").unwrap().to_owned())
+        let cedar_point_waits = client
+            .get_ride_times(parks.get("Cedar Point").unwrap().to_owned())
             .await
             .unwrap();
 
-        let mille_wait = cedar_point_waits.iter().find(|r| r.name == "Millennium Force").unwrap();
+        let mille_wait = cedar_point_waits
+            .iter()
+            .find(|r| r.name == "Millennium Force")
+            .unwrap();
         assert_eq!(mille_wait, og_mille_wait);
     }
-
 }

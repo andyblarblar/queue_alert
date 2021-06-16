@@ -6,7 +6,7 @@ edition = "2018"
 description = "Client for scraping the queue times website."
 readme = "./README.md"
 license = "MIT OR Apache-2.0"
-keywords = ["scraping","queue times","amusement park"]
+keywords = ["scraping","queue-times","amusement park"]
 
 [features]
 client = ["reqwest", "async-trait", "dashmap", "chrono", "tokio"]

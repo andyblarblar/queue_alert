@@ -46,9 +46,7 @@ impl ParkParser for GenericParkParser {
     fn new() -> Self {
         let selector = Selector::parse("nav.panel > a > span:not(.has-text-grey)").unwrap();
 
-        GenericParkParser {
-            selector,
-        }
+        GenericParkParser { selector }
     }
 
     fn get_ride_times(&self, html: &str) -> Result<Vec<RideTime>> {
@@ -158,9 +156,7 @@ impl FrontPageParser {
     pub fn new() -> Self {
         let selector = Selector::parse(".panel-block").unwrap();
 
-        FrontPageParser {
-            selector,
-        }
+        FrontPageParser { selector }
     }
 
     /// Creates a map of {park name, Url to park} by parsing the passed html. Will fail if html
@@ -179,7 +175,9 @@ impl FrontPageParser {
                     bail!(ErrorKind::HrefMissing)
                 }
                 Some(link) => {
-                    temp_park.1 = Url::parse(Self::BASE_URL)?.join(&(link.to_string() + "/"))?.join("queue_times")?; //Bec careful messing with this path, '/' matters a lot.
+                    temp_park.1 = Url::parse(Self::BASE_URL)?
+                        .join(&(link.to_string() + "/"))?
+                        .join("queue_times")?; //Be careful messing with this path, '/' matters a lot.
                 }
             }
 
@@ -199,9 +197,7 @@ impl Default for FrontPageParser {
     fn default() -> Self {
         let selector = Selector::parse(".panel-block").unwrap();
 
-        FrontPageParser {
-            selector,
-        }
+        FrontPageParser { selector }
     }
 }
 

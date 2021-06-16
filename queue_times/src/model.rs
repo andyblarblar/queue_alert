@@ -3,7 +3,7 @@
  */
 //! Contains models used in parsing
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Current operating status of a ride. Defaults to `Closed`.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -13,7 +13,7 @@ pub enum RideStatus {
     /// Ride is closed.
     Closed,
     /// Ride is open, and has a specified wait. Time is always in minutes.
-    Wait(u16)
+    Wait(u16),
 }
 
 impl Default for RideStatus {
@@ -26,5 +26,5 @@ impl Default for RideStatus {
 #[derive(Clone, Debug, Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Default, Hash)]
 pub struct RideTime {
     pub name: String,
-    pub status: RideStatus
+    pub status: RideStatus,
 }
