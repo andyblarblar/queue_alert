@@ -5,19 +5,25 @@
 use actix_web::{Responder, HttpResponse, get, post, Result};
 use actix_web::web;
 use web_push::*;
-use std::sync::{RwLock, Arc};
+use std::sync::{Arc};
+use tokio::sync::RwLock;
+use crate::models::Keys;
+use std::ops::Deref;
 
-pub type RWVec = RwLock<Vec<SubscriptionInfo>>;//TODO change to tokio to make async RW
+pub type RWVec = RwLock<Vec<SubscriptionInfo>>;
 
 /// VAPID public key to be used with the JS client.
-static PUB_KEY: &str = "BMRl2A0MtIKCETR-kTY9jLD8Kk3rxBZZ6z61BQ845_vasL7RDFnwrwm5axLxnCgfR0StA8bL1PSvzs8l7Pox6Bo=";
+//static PUB_KEY: &str = "BMRl2A0MtIKCETR-kTY9jLD8Kk3rxBZZ6z61BQ845_vasL7RDFnwrwm5axLxnCgfR0StA8bL1PSvzs8l7Pox6Bo=";
 
 //TODO refactor into modules based upon api use
 
 /// Returns the current VAPID public key.
 #[get("/vapidPublicKey")]
-pub async fn vapid_public_key() -> impl Responder {
-    PUB_KEY
+pub async fn vapid_public_key(keys: web::Data<Keys>) -> impl Responder {
+    let arc = keys.into_inner();
+    let (_,public) = arc.deref();
+
+    public.0.clone()
 }
 
 /// Adds the subscription to the vec of clients to push.
@@ -26,7 +32,7 @@ pub async fn register(subscription: web::Json<SubscriptionInfo>, subs: web::Data
     let subscription = subscription.into_inner();
 
     //Check if already registered. Get as write to avoid race condition on index to insert to.
-    let mut wrt_subs = subs.write().unwrap();
+    let mut wrt_subs = subs.write().await;
     let exists = wrt_subs.binary_search_by(|s| s.endpoint.cmp(&subscription.endpoint));
 
     match exists {
@@ -51,7 +57,7 @@ pub async fn unregister(subscription: web::Json<SubscriptionInfo>, subs: web::Da
     let subscription = subscription.into_inner();
 
     //Remove client based upon their endpoint, which is unique. Get as write to avoid race condition on index.
-    let mut wrt_subs = subs.write().unwrap();
+    let mut wrt_subs = subs.write().await;
     let exists = wrt_subs.binary_search_by(|s| s.endpoint.cmp(&subscription.endpoint));
 
     match exists {
@@ -68,19 +74,20 @@ pub async fn unregister(subscription: web::Json<SubscriptionInfo>, subs: web::Da
 
 ///Demo function used to test notifications
 #[get("/ping")]
-pub async fn ping(subs: web::Data<Arc<RWVec>> ) -> impl Responder {
-    let subs = subs.read().unwrap();
+pub async fn ping(subs: web::Data<Arc<RWVec>>, keys: web::Data<Keys>) -> impl Responder {
+    let subs = subs.read().await;
 
+    let inner = keys.into_inner();
     let client = WebPushClient::new();
 
-    let private = std::fs::File::open("./private_key.pem").unwrap();
+    let (private,_) = inner.deref();
 
     for sub in subs.iter() {
         let mut builder = WebPushMessageBuilder::new(&sub).unwrap();
         let content = "Pong!".as_bytes();
 
         //*Must* set vapid signature, else error
-        builder.set_vapid_signature(VapidSignatureBuilder::from_pem(&private, &sub).unwrap().build().unwrap());
+        builder.set_vapid_signature(VapidSignatureBuilder::from_pem(private.0.as_bytes(), &sub).unwrap().build().unwrap());
         builder.set_payload(ContentEncoding::AesGcm, content);
 
         client.send(builder.build().unwrap()).await.unwrap();

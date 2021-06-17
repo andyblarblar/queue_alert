@@ -1,12 +1,13 @@
 [package]
 name = "queue_times"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Andy Ealovega <andrew@ealovega.dev>"]
 edition = "2018"
 description = "Client for scraping the queue times website."
 readme = "./README.md"
 license = "MIT OR Apache-2.0"
-keywords = ["scraping","queue-times","amusement park"]
+keywords = ["scraping","queue-times"]
+documentation = "https://docs.rs/queue_times/"
 
 [features]
 client = ["reqwest", "async-trait", "dashmap", "chrono", "tokio"]
@@ -22,3 +23,6 @@ async-trait = {version = "0.1.50", optional = true}
 dashmap = {version = "4.0.2", optional = true }
 chrono = {version = "0.4.19", optional = true}
 tokio = {version = "1.6.1", features = ["macros"], optional = true}
+
+[package.metadata.docs.rs]
+all-features = true
