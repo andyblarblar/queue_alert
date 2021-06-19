@@ -7,12 +7,20 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-web-push = "0.7.2"
-queue_times = {version = "0.0.2", features = ["client"]}
-actix-web = "3"
+web-push = {path = "../../rust-web-push"} #TODO perhaps make this published if the main fork doesnt update
+queue_times = {path = "../queue_times", features = ["client"]}#TODO upload new version then put here
 base64 = "0.13.0"
 dashmap = "4.0.2"
-actix-files = "0.5.0"
+url = "2.2.2"
+serde = {version = "1.0.126", features = ["derive"]}
+
+#pin these bc rust async is bad >:(
+actix-web = "=4.0.0-beta.5"
+actix-rt = "2.2.0"
+actix-files = "0.6.0-beta.4"
+actix-http = "=3.0.0-beta.5"
+actix-service = "=2.0.0-beta.5"
+
 tokio = {version = "1", features = ["sync"]}
 openssl = "0.10.34"
 

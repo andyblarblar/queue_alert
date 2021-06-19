@@ -7,7 +7,7 @@ mod models;
 
 use actix_web::*;
 use actix_files::{Files};
-use simplelog::{Config, LevelFilter};
+use simplelog::{Config, LevelFilter, ConfigBuilder};
 use actix_web::middleware::Logger;
 use std::sync::Arc;
 use std::io::Read;
@@ -16,14 +16,15 @@ use openssl::bn::BigNumContext;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    simplelog::SimpleLogger::init(LevelFilter::Debug, Config::default()).unwrap();
+    let config = ConfigBuilder::default().add_filter_ignore_str("html5ever").add_filter_ignore_str("selectors::matching").build();
+    simplelog::SimpleLogger::init(LevelFilter::Debug, config).unwrap();
 
     //Load keys
     let keys = load_private_key();
     match keys {
         Ok(_) => {}
         Err(why) => {
-            log::error!("Couldn't load private key. Make sure to have a PEM pk in the file: './private_key.pem'.");
+            log::error!("Couldn't load private key. Make sure to have a PEM pk in the file: './private_key.pem'. Generate with: `openssl ecparam -genkey -name prime256v1 -out private_key.pem`");
             return std::io::Result::Err(why)
         }
     }
@@ -31,17 +32,22 @@ async fn main() -> std::io::Result<()> {
 
     //All subscribed users, to be sorted by endpoint to allow for binary searches
     let subs = Arc::new(routes::RWVec::new(Vec::new()));
+    //Shared caching queue times client
+    let queue_client = Arc::new(queue_times::client::CachedClient::default());
 
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::new("%a %U %s"))
             .data(subs.clone())//Clients to push to
             .data(keys.clone())
+            .data(queue_client.clone())
             //Begin endpoints
-            .service(routes::vapid_public_key)
-            .service(routes::register)
-            .service(routes::unregister)
-            .service(routes::ping)//TODO remove this
+            .service(routes::registration::vapid_public_key)
+            .service(routes::registration::register)
+            .service(routes::registration::unregister)
+            .service(routes::registration::ping)//TODO remove this
+            .service(routes::queue::get_all_parks)//TODO remove this
+            .service(routes::queue::get_park_wait_times)
             .service(Files::new("/","./www").index_file("index.html"))//Must be last, serves static site
     })
         .bind(("0.0.0.0", 8080))?

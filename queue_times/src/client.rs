@@ -34,6 +34,8 @@ use url::Url;
 use crate::error::*;
 use crate::model::RideTime;
 use crate::parser::{FrontPageParser, GenericParkParser, ParkParser};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Base Url to the queue times website.
 pub static BASE_URL: &str = "https://queue-times.com";
@@ -132,6 +134,10 @@ impl QueueTimesClient for Client {
 /// add considerable overhead in scenarios where only occasional calls are made, so a choice must be made depending
 /// on your use case.
 ///
+/// The implimentation will eagerly return results, but lazaly updates cache. This means that if the client is never called,
+/// then it will never update the cache. But if it does need to update the cache, it will first return the result of the request,
+/// while the cache updates in the background.
+///
 /// # Example
 /// ```
 /// use queue_times::client::{Client, QueueTimesClient, CachedClient};
@@ -147,28 +153,32 @@ impl QueueTimesClient for Client {
 /// ```
 pub struct CachedClient<T>
 where
-    T: QueueTimesClient + Send + Sync,
+    T: QueueTimesClient + Send + Sync + 'static,
 {
-    client: T,
+    /// The client, Arc wrapped to allow for use in tokio tasks.
+    client: Arc<T>,
     /// Cache of park URL to ride times. This should contain all parks at all times.
-    cache: dashmap::DashMap<Url, Vec<RideTime>>,
+    ride_cache: Arc<dashmap::DashMap<Url, Vec<RideTime>>>,
     /// Cache of park name to URL to rides page. Never needs to be updated.
     parks_cache: RwLock<HashMap<String, Url>>, //use RwLock over dashmap to avoid clone when returning
     /// Last update to cache, update every 5 minutes.
-    last_updated: RwLock<chrono::DateTime<Local>>,
+    last_updated: Arc<RwLock<chrono::DateTime<Local>>>,
+    /// True if cache is currently updating in background.
+    currently_updating_cache: Arc<AtomicBool>
 }
 
 impl<T> CachedClient<T>
 where
-    T: QueueTimesClient + Send + Sync,
+    T: QueueTimesClient + Send + Sync + 'static,
 {
     /// Wraps the passed client with a cache.
     pub fn new(client: T) -> Self {
         CachedClient {
-            client,
-            cache: dashmap::DashMap::new(),
+            client: Arc::new(client),
+            ride_cache: Arc::new(dashmap::DashMap::new()),
             parks_cache: RwLock::new(HashMap::new()),
-            last_updated: RwLock::new(Local::now() - Duration::minutes(6)),
+            last_updated: Arc::new(RwLock::new(Local::now() - Duration::minutes(6))),
+            currently_updating_cache: Arc::new(Default::default())
         }
     }
 }
@@ -176,7 +186,7 @@ where
 #[async_trait]
 impl<T> QueueTimesClient for CachedClient<T>
 where
-    T: QueueTimesClient + Send + Sync,
+    T: QueueTimesClient + Send + Sync + 'static,
 {
     async fn get_park_urls(&self) -> Result<HashMap<String, Url>> {
         //Fill cache if never been used
@@ -202,7 +212,7 @@ where
             //Return cache if website hasn't updated yet
             if (Local::now() - *time_lock) < chrono::Duration::minutes(5) {
                 let rides = self
-                    .cache
+                    .ride_cache
                     .get(&park_url)
                     .ok_or_else(|| Error::from(ErrorKind::BadUrl(park_url)))?;
 
@@ -210,25 +220,37 @@ where
             }
         }
 
-        //Update cache
+        //Cache must be updated
+
+        //Clone Arcs
         let mut parks = self.get_park_urls().await?;
+        let client = self.client.clone();
+        let ride_cache = self.ride_cache.clone();
+        let last_updated = self.last_updated.clone();
+        let currently_updating = self.currently_updating_cache.clone();
 
-        //Get each park
-        for (_, park_url) in parks.drain() {
-            let times = self.client.get_ride_times(park_url.clone()).await?;
+        //Check if we're already updating to avoid downloading more than once
+        if !currently_updating.load(Ordering::SeqCst) {
+            log::debug!("Updating cache");
 
-            self.cache.insert(park_url, times);
+            currently_updating.store(true, Ordering::SeqCst);
+
+            //Update cache in background, and eagerly return the requested park
+            tokio::spawn(async move {
+                //Get each park
+                for (_, park_url) in parks.drain() {
+                    let times = client.get_ride_times(park_url.clone()).await.unwrap();//TODO handle. For now it may be fine to let it just die, as last_updated will call another cache update
+
+                    ride_cache.insert(park_url, times);
+                }
+                let mut time_lock = last_updated.write().await;
+                *time_lock = Local::now();
+                currently_updating.store(false, Ordering::SeqCst);
+            });
         }
 
-        let mut time_lock = self.last_updated.write().await;
-        *time_lock = Local::now();
-
-        //Use new cache to respond
-        Ok(self
-            .cache
-            .get(&park_url)
-            .ok_or_else(|| Error::from(ErrorKind::BadUrl(park_url)))?
-            .clone())
+        let times = self.client.get_ride_times(park_url).await?;
+        Ok(times)
     }
 }
 

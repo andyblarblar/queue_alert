@@ -11,87 +11,163 @@ use crate::models::Keys;
 use std::ops::Deref;
 
 pub type RWVec = RwLock<Vec<SubscriptionInfo>>;
+pub type QClient = queue_times::client::CachedClient<queue_times::client::Client>;
 
-/// VAPID public key to be used with the JS client.
-//static PUB_KEY: &str = "BMRl2A0MtIKCETR-kTY9jLD8Kk3rxBZZ6z61BQ845_vasL7RDFnwrwm5axLxnCgfR0StA8bL1PSvzs8l7Pox6Bo=";
+/// Routes for registering users to push.
+pub mod registration {
+    use super::*;
 
-//TODO refactor into modules based upon api use
+    /// Returns the current VAPID public key.
+    #[get("/vapidPublicKey")]
+    pub async fn vapid_public_key(keys: web::Data<Keys>) -> impl Responder {
+        let arc = keys.into_inner();
+        let (_, public) = arc.deref();
 
-/// Returns the current VAPID public key.
-#[get("/vapidPublicKey")]
-pub async fn vapid_public_key(keys: web::Data<Keys>) -> impl Responder {
-    let arc = keys.into_inner();
-    let (_,public) = arc.deref();
+        public.0.clone()
+    }
 
-    public.0.clone()
-}
+    /// Adds the subscription to the vec of clients to push.
+    #[post("/register")]
+    pub async fn register(subscription: web::Json<SubscriptionInfo>, subs: web::Data<Arc<RWVec>>) -> Result<impl Responder> {
+        let subscription = subscription.into_inner();
 
-/// Adds the subscription to the vec of clients to push.
-#[post("/register")]
-pub async fn register(subscription: web::Json<SubscriptionInfo>, subs: web::Data<Arc<RWVec>> ) -> Result<impl Responder> {
-    let subscription = subscription.into_inner();
+        //Check if already registered. Get as write to avoid race condition on index to insert to.
+        let mut wrt_subs = subs.write().await;
+        let exists = wrt_subs.binary_search_by(|s| s.endpoint.cmp(&subscription.endpoint));
 
-    //Check if already registered. Get as write to avoid race condition on index to insert to.
-    let mut wrt_subs = subs.write().await;
-    let exists = wrt_subs.binary_search_by(|s| s.endpoint.cmp(&subscription.endpoint));
+        match exists {
+            //Already registered
+            Ok(_) => {
+                Ok(HttpResponse::Ok())
+            },
+            //Register in sorted order
+            Err(idx) => {
+                //Add client to vec of clients to send push to
+                wrt_subs.insert(idx, subscription);
 
-    match exists {
-        //Already registered
-        Ok(_) => {
-            Ok(HttpResponse::Ok())
-        },
-        //Register in sorted order
-        Err(idx) => {
-            //Add client to vec of clients to send push to
-            wrt_subs.insert(idx, subscription);
-
-            Ok(HttpResponse::Ok())
+                Ok(HttpResponse::Ok())
+            }
         }
     }
-}
 
-/// Removes the subscription from the server, stopping push notifications. Clients still need to unsub from the
-/// push service on their end.
-#[post("/unregister")]
-pub async fn unregister(subscription: web::Json<SubscriptionInfo>, subs: web::Data<Arc<RWVec>> ) -> impl Responder {
-    let subscription = subscription.into_inner();
+    /// Removes the subscription from the server, stopping push notifications. Clients still need to unsub from the
+    /// push service on their end.
+    #[post("/unregister")]
+    pub async fn unregister(subscription: web::Json<SubscriptionInfo>, subs: web::Data<Arc<RWVec>>) -> impl Responder {
+        let subscription = subscription.into_inner();
 
-    //Remove client based upon their endpoint, which is unique. Get as write to avoid race condition on index.
-    let mut wrt_subs = subs.write().await;
-    let exists = wrt_subs.binary_search_by(|s| s.endpoint.cmp(&subscription.endpoint));
+        //Remove client based upon their endpoint, which is unique. Get as write to avoid race condition on index.
+        let mut wrt_subs = subs.write().await;
+        let exists = wrt_subs.binary_search_by(|s| s.endpoint.cmp(&subscription.endpoint));
 
-    match exists {
-        Ok(idx) => {
-            wrt_subs.remove(idx);
-            HttpResponse::Ok().finish()
-        },
-        //sub isnt registered
-        Err(_) => {
-            HttpResponse::BadRequest().body("Subscription was not registered with queue alert")
+        match exists {
+            Ok(idx) => {
+                wrt_subs.remove(idx);
+                HttpResponse::Ok().finish()
+            },
+            //sub isnt registered
+            Err(_) => {
+                HttpResponse::BadRequest().body("Subscription was not registered with queue alert")
+            }
         }
     }
+
+    ///Demo function used to test notifications
+    #[get("/ping")]
+    pub async fn ping(subs: web::Data<Arc<RWVec>>, keys: web::Data<Keys>) -> impl Responder {
+        let subs = subs.read().await;
+
+        let inner = keys.into_inner();
+        let client = WebPushClient::new();
+
+        let (private, _) = inner.deref();
+
+        for sub in subs.iter() {
+            let mut builder = WebPushMessageBuilder::new(&sub).unwrap();
+            let content = "Pong!".as_bytes();
+
+            //*Must* set vapid signature, else error
+            builder.set_vapid_signature(VapidSignatureBuilder::from_pem(private.0.as_bytes(), &sub).unwrap().build().unwrap());
+            builder.set_payload(ContentEncoding::AesGcm, content);
+
+            client.send(builder.build().unwrap()).await.unwrap();
+        }
+
+        HttpResponse::Ok()
+    }
 }
 
-///Demo function used to test notifications
-#[get("/ping")]
-pub async fn ping(subs: web::Data<Arc<RWVec>>, keys: web::Data<Keys>) -> impl Responder {
-    let subs = subs.read().await;
+pub mod queue {
+    use super::*;
+    use queue_times::client::QueueTimesClient;
+    use std::collections::{BTreeMap};
 
-    let inner = keys.into_inner();
-    let client = WebPushClient::new();
+    ///Responds with a JSON object of {name, park_url}, sorted by name.
+    #[get("/allParks")]
+    pub async fn get_all_parks(client: web::Data<Arc<QClient>>) -> Result<impl Responder> {
+        let client = client.into_inner();
+        let res = client.get_park_urls().await;
 
-    let (private,_) = inner.deref();
-
-    for sub in subs.iter() {
-        let mut builder = WebPushMessageBuilder::new(&sub).unwrap();
-        let content = "Pong!".as_bytes();
-
-        //*Must* set vapid signature, else error
-        builder.set_vapid_signature(VapidSignatureBuilder::from_pem(private.0.as_bytes(), &sub).unwrap().build().unwrap());
-        builder.set_payload(ContentEncoding::AesGcm, content);
-
-        client.send(builder.build().unwrap()).await.unwrap();
+        match res {
+            Ok(mut map) => {
+                //Sort map by name
+                let map = map.drain().map(|(n,u)| (n,u.to_string())).collect::<BTreeMap<String,String>>();
+                Ok(HttpResponse::Ok().json(map))
+            }
+            Err(err) => {
+                return Ok(HttpResponse::InternalServerError().body(format!("{}",err)))
+            }
+        }
     }
 
-    HttpResponse::Ok()
+    /// Used for extracting `...?url=...` queries.
+    #[derive(serde::Deserialize)]
+    pub struct UrlQuery {
+        pub url: String
+    }
+
+    ///Responds with a sorted JSON list of ride wait times for the park at the passed url. The url is validated before being accepted.
+    ///
+    /// # Example
+    /// `GET /parkWaitTimes?url=...`
+    #[get("/parkWaitTimes")]
+    pub async fn get_park_wait_times(client: web::Data<Arc<QClient>>, url: web::Query<UrlQuery>) -> impl Responder {//TODO test with frontend, then add push, then make frontend and fix PWA
+        use url::Url;
+
+        let client = client.into_inner();
+
+        //Validate url
+        let url = Url::parse(url.into_inner().url.as_str());
+        match &url {
+            Ok(url) => {
+                //Validate url is to queue_times, else consumers could have us download anything :/
+                match url.domain() {
+                    None => {
+                        return HttpResponse::BadRequest().body("Non queue-times url passed.")
+                    }
+                    Some(domain) => {
+                        if domain != "queue-times.com" {
+                            return HttpResponse::BadRequest().body("Non queue-times url passed.")
+                        }
+                    }
+                }
+            }
+            Err(_) => {
+                return HttpResponse::BadRequest().body("Bad Url passed.")
+            }
+        }
+        let url = url.unwrap();
+
+        let res = client.get_ride_times(url).await;
+
+        match res {
+            Ok(mut times) => {
+                times.sort();
+                HttpResponse::Ok().json(times)
+            }
+            Err(err) => {
+                return HttpResponse::InternalServerError().body(format!("{}",err))
+            }
+        }
+    }
 }
