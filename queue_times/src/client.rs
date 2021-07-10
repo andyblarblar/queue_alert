@@ -237,6 +237,8 @@ where
 
             //Update cache in background, and eagerly return the requested park
             tokio::spawn(async move {
+                let _guard = CompletionGuard{complete: currently_updating};
+
                 //Get each park
                 for (_, park_url) in parks.drain() {
                     let times = client.get_ride_times(park_url.clone()).await.unwrap();//TODO handle. For now it may be fine to let it just die, as last_updated will call another cache update
@@ -245,7 +247,6 @@ where
                 }
                 let mut time_lock = last_updated.write().await;
                 *time_lock = Local::now();
-                currently_updating.store(false, Ordering::SeqCst);
             });
         }
 
@@ -257,6 +258,18 @@ where
 impl Default for CachedClient<Client> {
     fn default() -> Self {
         CachedClient::new(Client::new())
+    }
+}
+
+/// RAII type that signals the completion or cancellation of a task.
+/// Will be `false` on drop, useful for ensuring cancelled async tasks are handled.
+struct CompletionGuard {
+    complete: Arc<AtomicBool>
+}
+
+impl Drop for CompletionGuard {
+    fn drop(&mut self) {
+        self.complete.store(false, Ordering::SeqCst);
     }
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "queue_times"
-version = "0.0.3"
+version = "0.0.4"
 authors = ["Andy Ealovega <andrew@ealovega.dev>"]
 edition = "2018"
 description = "Client for scraping the queue times website."

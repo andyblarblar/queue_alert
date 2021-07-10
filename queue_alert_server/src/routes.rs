@@ -9,8 +9,9 @@ use std::sync::{Arc};
 use tokio::sync::RwLock;
 use crate::models::Keys;
 use std::ops::Deref;
+use crate::routes::registration::Registration;
 
-pub type RWVec = RwLock<Vec<SubscriptionInfo>>;
+pub type RWVec = RwLock<Vec<Registration>>;
 pub type QClient = queue_times::client::CachedClient<queue_times::client::Client>;
 
 /// Routes for registering users to push.
@@ -26,14 +27,23 @@ pub mod registration {
         public.0.clone()
     }
 
+    /// A clients registration.
+    #[derive(serde::Deserialize, serde::Serialize)]
+    pub struct Registration {
+        /// Push API endpoint info.
+        pub sub: SubscriptionInfo,
+        /// The park the user is listening to.
+        pub park: String
+    }
+
     /// Adds the subscription to the vec of clients to push.
     #[post("/register")]
-    pub async fn register(subscription: web::Json<SubscriptionInfo>, subs: web::Data<Arc<RWVec>>) -> Result<impl Responder> {
+    pub async fn register(subscription: web::Json<Registration>, subs: web::Data<Arc<RWVec>>) -> Result<impl Responder> {
         let subscription = subscription.into_inner();
 
         //Check if already registered. Get as write to avoid race condition on index to insert to.
         let mut wrt_subs = subs.write().await;
-        let exists = wrt_subs.binary_search_by(|s| s.endpoint.cmp(&subscription.endpoint));
+        let exists = wrt_subs.binary_search_by(|s| s.sub.endpoint.cmp(&subscription.sub.endpoint));
 
         match exists {
             //Already registered
@@ -58,7 +68,7 @@ pub mod registration {
 
         //Remove client based upon their endpoint, which is unique. Get as write to avoid race condition on index.
         let mut wrt_subs = subs.write().await;
-        let exists = wrt_subs.binary_search_by(|s| s.endpoint.cmp(&subscription.endpoint));
+        let exists = wrt_subs.binary_search_by(|s| s.sub.endpoint.cmp(&subscription.endpoint));
 
         match exists {
             Ok(idx) => {
@@ -70,30 +80,6 @@ pub mod registration {
                 HttpResponse::BadRequest().body("Subscription was not registered with queue alert")
             }
         }
-    }
-
-    ///Demo function used to test notifications
-    #[get("/ping")]
-    pub async fn ping(subs: web::Data<Arc<RWVec>>, keys: web::Data<Keys>) -> impl Responder {
-        let subs = subs.read().await;
-
-        let inner = keys.into_inner();
-        let client = WebPushClient::new();
-
-        let (private, _) = inner.deref();
-
-        for sub in subs.iter() {
-            let mut builder = WebPushMessageBuilder::new(&sub).unwrap();
-            let content = "Pong!".as_bytes();
-
-            //*Must* set vapid signature, else error
-            builder.set_vapid_signature(VapidSignatureBuilder::from_pem(private.0.as_bytes(), &sub).unwrap().build().unwrap());
-            builder.set_payload(ContentEncoding::AesGcm, content);
-
-            client.send(builder.build().unwrap()).await.unwrap();
-        }
-
-        HttpResponse::Ok()
     }
 }
 
@@ -131,7 +117,7 @@ pub mod queue {
     /// # Example
     /// `GET /parkWaitTimes?url=...`
     #[get("/parkWaitTimes")]
-    pub async fn get_park_wait_times(client: web::Data<Arc<QClient>>, url: web::Query<UrlQuery>) -> impl Responder {//TODO test with frontend, then add push, then make frontend and fix PWA
+    pub async fn get_park_wait_times(client: web::Data<Arc<QClient>>, url: web::Query<UrlQuery>) -> impl Responder {
         use url::Url;
 
         let client = client.into_inner();

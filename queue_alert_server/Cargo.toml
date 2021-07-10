@@ -8,11 +8,14 @@ edition = "2018"
 
 [dependencies]
 web-push = {path = "../../rust-web-push"} #TODO perhaps make this published if the main fork doesnt update
-queue_times = {path = "../queue_times", features = ["client"]}#TODO upload new version then put here
+queue_times = {version = "0.0.4", features = ["client"]}
 base64 = "0.13.0"
 dashmap = "4.0.2"
 url = "2.2.2"
 serde = {version = "1.0.126", features = ["derive"]}
+serde_json = "1.0.64"
+timer = "0.2.0"
+chrono = "0.4.19"
 
 #pin these bc rust async is bad >:(
 actix-web = "=4.0.0-beta.5"
@@ -20,6 +23,8 @@ actix-rt = "2.2.0"
 actix-files = "0.6.0-beta.4"
 actix-http = "=3.0.0-beta.5"
 actix-service = "=2.0.0-beta.5"
+
+actix-cors = "0.6.0-beta.1"
 
 tokio = {version = "1", features = ["sync"]}
 openssl = "0.10.34"

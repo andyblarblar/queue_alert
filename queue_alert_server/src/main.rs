@@ -7,12 +7,13 @@ mod models;
 
 use actix_web::*;
 use actix_files::{Files};
-use simplelog::{Config, LevelFilter, ConfigBuilder};
+use simplelog::{LevelFilter, ConfigBuilder};
 use actix_web::middleware::Logger;
 use std::sync::Arc;
 use std::io::Read;
 use openssl::bn::BigNumContext;
-
+use queue_times::client::QueueTimesClient;
+use web_push::{WebPushClient, WebPushMessageBuilder, VapidSignatureBuilder, ContentEncoding};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -35,8 +36,79 @@ async fn main() -> std::io::Result<()> {
     //Shared caching queue times client
     let queue_client = Arc::new(queue_times::client::CachedClient::default());
 
+    //Setup timer to send push notifications
+    let timer_subs = subs.clone();
+    let timer_client = queue_client.clone();
+    let timer_keys = keys.clone();
+    let timer = timer::Timer::new();
+    let _timer_scope /*RAII type*/ = timer.schedule_repeating(chrono::Duration::seconds(30), move || {
+        //Clone again to preserve FnMut
+        let timer_subs2 = timer_subs.clone();
+        let timer_client2 = timer_client.clone();
+        let timer_keys2 = timer_keys.clone();
+
+        let tok = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+
+        tok.block_on(async move {
+            {
+                let subs = timer_subs2.read().await;
+
+                if subs.is_empty() {
+                    return
+                }
+            }
+
+            log::debug!("pushing to clients");
+            let parks = timer_client2.get_park_urls().await;
+
+            if let Err(why) = &parks {
+                log::error!("While getting parks: {}",why);
+                return
+            }
+            let parks = parks.unwrap();
+
+            //Send push message to registered clients
+            let client = WebPushClient::new();
+
+            let subs = timer_subs2.read().await;
+
+            //Push to all clients
+            for sub in subs.iter() {
+                let url = parks.get(&sub.park);
+                if url.is_none() {continue}
+
+                let rides = timer_client2.get_ride_times(url.unwrap().to_owned()).await;
+
+                if let Err(why) = rides {
+                    log::error!("While getting rides: {}",why);
+                    continue
+                }
+
+                let mut builder = WebPushMessageBuilder::new(&sub.sub).unwrap();
+
+                let content = serde_json::to_string(&rides.unwrap()).unwrap(); //It seems web push needs utf-8 bytes, so json it is. Cant even compress :/
+
+                log::debug!("Content size: {} bytes", content.len());
+
+                //*Must* set vapid signature, else error
+                builder.set_vapid_signature(VapidSignatureBuilder::from_pem(timer_keys2.0.0.as_bytes(), &sub.sub).unwrap().build().unwrap());
+                builder.set_payload(ContentEncoding::AesGcm, content.as_bytes());
+
+                if let Err(why) = client.send(builder.build().unwrap()).await {
+                    log::error!("When sending webpush to client: {}", why);
+                }
+            }
+        });
+    });
+
     HttpServer::new(move || {
+        let cors = actix_cors::Cors::permissive();//TODO change for prod
+
         App::new()
+            .wrap(cors)
             .wrap(Logger::new("%a %U %s"))
             .data(subs.clone())//Clients to push to
             .data(keys.clone())
@@ -45,8 +117,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::registration::vapid_public_key)
             .service(routes::registration::register)
             .service(routes::registration::unregister)
-            .service(routes::registration::ping)//TODO remove this
-            .service(routes::queue::get_all_parks)//TODO remove this
+            .service(routes::queue::get_all_parks)
             .service(routes::queue::get_park_wait_times)
             .service(Files::new("/","./www").index_file("index.html"))//Must be last, serves static site
     })
