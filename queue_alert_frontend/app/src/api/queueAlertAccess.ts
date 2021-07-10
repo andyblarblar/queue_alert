@@ -27,6 +27,8 @@ export default class QueueAlertAccess {
 
     private sub: PushSubscription | null = null
 
+    private isRegistered = false
+
     /** Creates a new client for the queue alert at the passed base URL. */
     constructor(queueAlertUrl: string) {
         this.url = queueAlertUrl
@@ -34,7 +36,12 @@ export default class QueueAlertAccess {
         //Load current push sub if set.
         navigator.serviceWorker.getRegistration('/')
             .then((worker) => {
-                worker!.pushManager.getSubscription()
+                if (worker == null) {
+                    this.sub = null
+                    return
+                }
+
+                worker.pushManager.getSubscription()
                     .then((sub) => {
                         this.sub = sub
                     })
@@ -135,6 +142,10 @@ export default class QueueAlertAccess {
         if (this.sub == null) {
             return Err(1)
         }
+        //Don't register twice
+        if (this.isRegistered) {
+            return Ok(null)
+        }
 
         const body = JSON.stringify({ sub: this.sub, park: park });
 
@@ -148,6 +159,7 @@ export default class QueueAlertAccess {
         console.debug("registering with server");
 
         if (res.ok) {
+            this.isRegistered = true
             return Ok(null)
         }
         else {
@@ -167,6 +179,11 @@ export default class QueueAlertAccess {
             return Err(1)
         }
 
+        //Ignore if not registered
+        if (!this.isRegistered) {
+            return Ok(null)
+        }
+
         const res = await fetch(this.url + '/unregister', {
             method: 'post',
             headers: {
@@ -177,6 +194,7 @@ export default class QueueAlertAccess {
         console.debug("unregistered with server");
 
         if (res.ok) {
+            this.isRegistered = false
             return Ok(null)
         }
         else {

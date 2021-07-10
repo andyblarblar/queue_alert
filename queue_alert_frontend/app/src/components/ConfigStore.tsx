@@ -10,18 +10,18 @@ import { AlertConfig } from "../api/alertConfig"
 import { action, useConfigReducer } from "./ConfigReducer"
 import React, { useContext } from "react"
 
-const configContext = React.createContext<[AlertConfig, React.Dispatch<action>]>([["none",[]],() => {}])
+const configContext = React.createContext<[AlertConfig, React.Dispatch<action>]>([["none", []], () => { }])
 
-type props = {oldConfig?: AlertConfig}
+type props = { oldConfig?: AlertConfig }
 
 /**
  * Provides access to an alert config. oldConfig can optionally be passed to load a previous Config on mount.
  */
-export const ConfigProvider: React.FC<props> = ({children, oldConfig}) => {
+export const ConfigProvider: React.FC<props> = ({ children, oldConfig }) => {
     const [state, dispatch] = useConfigReducer()
 
-    if (oldConfig != null) {
-    dispatch({type: 'loadConfig', oldConfig: oldConfig })
+    if (oldConfig != null && state[0] === "none") {//This condition is very important, as it causes infinite recursion without a base case
+        dispatch({ type: 'loadConfig', oldConfig: oldConfig })
     }
 
     return (

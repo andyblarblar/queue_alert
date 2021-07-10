@@ -42,10 +42,15 @@ export async function sendConfigToSW(config: AlertConfig): Promise<Result<null, 
 /**
  * Asks the serviceworker for its copy of the config. This can be used to load the config after a full app
  * reload, for example.
- * @returns The config if set, null if not.
+ * @returns The config if set, null if not, or no SW.
  */
-export async function getConfigFromSW(): Promise<AlertConfig | null> {//TODO need to test
+export async function getConfigFromSW(): Promise<AlertConfig | null> {
     let SW = await navigator.serviceWorker.getRegistration('/')
+
+    if (SW == null) {
+        console.debug('Failed to get SW when asking for config')
+        return null
+    }
 
     //Wrap response event in promise to make async
     let responsePromise = new Promise(async (resolve, reject) => {
@@ -53,8 +58,10 @@ export async function getConfigFromSW(): Promise<AlertConfig | null> {//TODO nee
 
         //Set config when received 
         const onResponse = (ev: MessageEvent<any>) => {
+            console.debug('got config from SW message')
             const response = ev.data as AlertConfig | null
             config = response
+            console.debug(`got config from SW ${config}`)
         }
 
         navigator.serviceWorker.addEventListener('message', onResponse)
@@ -69,7 +76,7 @@ export async function getConfigFromSW(): Promise<AlertConfig | null> {//TODO nee
 
         resolve(config)
     })
-    
+
     //Send message and wait until we get a response
     SW?.active?.postMessage({type: 'getConfig', message: null})
     const config = await responsePromise

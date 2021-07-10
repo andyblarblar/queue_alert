@@ -32,7 +32,7 @@ function Park() {
                     setError(true)
                 }
             })
-    }, [client, parkUrl])
+    }, [])
 
     const [config, dispatch] = useConfig()
     //Callback to add ride

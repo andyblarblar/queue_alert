@@ -52,10 +52,12 @@ export default function App() {
  */
 function useSWConfig() {
   //Attempt to load from SW
-  let [initalConfig, setInitalConfig] = useState<AlertConfig | null >(null)
+  let [initalConfig, setInitalConfig] = useState<AlertConfig | null>(null)
   useEffect(() => {
-    getConfigFromSW().then((config) => setInitalConfig(config))
-  }, [initalConfig])
+    getConfigFromSW().then((config) => {
+      setInitalConfig(config)
+    })
+  }, [])
 
   return initalConfig
 }

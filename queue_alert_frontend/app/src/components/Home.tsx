@@ -5,12 +5,14 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { parkMap } from "../api/queueAlertAccess"
+import { useConfig } from "./ConfigStore"
 import { useQaClient } from "./qaUrlStore"
 
 function Home() {
     const [parkmap, setparkmap] = useState(new Map<string, string>())
     const [error, seterror] = useState(false)
     const { client } = useQaClient()
+    const [config, _] = useConfig()//TODO remove
 
     useEffect(() => {
         //Hit backend
@@ -26,7 +28,7 @@ function Home() {
                 console.debug(err)
                 seterror(true)
             })
-    }, [client])
+    }, [])
 
 
     if (!error && parkmap.size === 0) {
@@ -46,6 +48,7 @@ function Home() {
     else {
         return (
             <div>
+                <p>config: {JSON.stringify(config[1])}</p>
                 {
                     createParkList(parkmap)
                 }
