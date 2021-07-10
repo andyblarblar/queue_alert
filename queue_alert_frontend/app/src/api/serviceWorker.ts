@@ -6,13 +6,25 @@
 import { AlertConfig, alertConfigMessageType, swMessage } from "./alertConfig";
 import { Mutex } from "async-mutex";
 import { rideTime } from "./queueAlertAccess";
+import * as localforage from 'localforage'
 
 /** Actual Logic **/
 
+/** Loads the config from the db if it exists. Will be null if not set. */
+function loadConfig() {
+    let dbConfig
+    localforage.getItem('config').then((conf) => {
+        dbConfig = conf
+    })
+    return dbConfig as unknown as AlertConfig | null
+}
+
 /**
- * Current config of rides to alert on. Null if not set.
+ * Current config of rides to alert on. Null if not set. This will be updated via messages from the client, and persisted in
+ * IndexedDb.
  */
-let config: AlertConfig | null = null //TODO load from indexedDB here
+let config: AlertConfig | null = loadConfig()
+
 /**
  * Locks write access to `config` when config is being read.
  */
@@ -21,6 +33,7 @@ let configMutex: Mutex = new Mutex()
 function handlePush(payload: rideTime[], event: PushEvent) {
     /**Used to ensure the user only gets default message if none was sent.*/
     let notified = false
+
     return configMutex.runExclusive(async () => {
         //Check times for all rides we're waiting on.
         for (const [, rideConfigs] of Object.entries(config ?? [])) {
@@ -92,13 +105,17 @@ function handlePush(payload: rideTime[], event: PushEvent) {
 /**
  * Handle new config being sent from frontend.
  */
-self.addEventListener('message', async (event) => {//TODO add config to indexedDB in this callback. Also sub/unsub user from push and backend depending on if the config is empty.
+self.addEventListener('message', async (event) => {
     let message = event.data as swMessage<alertConfigMessageType>
 
     if (message.type === 'setConfig') {
         console.debug("Got new config")
+
         await configMutex.runExclusive(async () => {
             config = message.message as AlertConfig
+
+            //Persist config in Db
+            await localforage.setItem('config', config)
         })
     }
 })

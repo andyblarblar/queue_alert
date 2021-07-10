@@ -16,7 +16,7 @@ import { ConfigProvider } from './components/ConfigStore';
 import { AlertConfig, getConfigFromSW } from './api/alertConfig';
 import { useEffect, useState } from 'react';
 
-//TODO add indexedDB to SW, add save btn to park page, then wire final SW up 
+//TODO wire up old and new service workers, then watch the app explode lol
 export default function App() {
 
   //Load persisted config on app load
