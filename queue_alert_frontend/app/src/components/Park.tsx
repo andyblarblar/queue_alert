@@ -5,7 +5,6 @@
 import { useEffect, useState } from "react"
 import { useLocation, useParams } from "react-router"
 import { rideTime } from "../api/queueAlertAccess"
-import { action } from "./ConfigReducer"
 import ConfigSaveButton from "./ConfigSaveButton"
 import { useConfig } from "./ConfigStore"
 import { useQaClient } from "./qaUrlStore"
@@ -13,7 +12,7 @@ import RideConfig from "./RideConfig"
 
 function Park() {
     let { park } = useParams<{ park: string }>()
-    park = park.split('?')[0] //Remove query string
+    park = park.split('?')[0].replaceAll('-', ' ') //Remove query string and hyphens
     const parkUrl = useQuery().get('url')
 
     const { client } = useQaClient()
@@ -41,7 +40,7 @@ function Park() {
         if (config[0] !== park) {
             dispatch({
                 type: "changePark",
-                park: park
+                park: park /*must remove '-' else this will silently stop pushes*/
             })
         }
 
@@ -73,7 +72,7 @@ function Park() {
 
     return (
         <div>
-            <h1>Ride times for {park.replaceAll('-', ' ')}!</h1>
+            <h1>Ride times for {park}!</h1>
             <p>config: {JSON.stringify(config[1])}</p>
             
             {rides.map(r => {

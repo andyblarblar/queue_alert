@@ -36,7 +36,7 @@ pub mod registration {
         pub park: String
     }
 
-    /// Adds the subscription to the vec of clients to push.
+    /// Adds the subscription to the vec of clients to push. Does not duplicate registrations if already set.
     #[post("/register")]
     pub async fn register(subscription: web::Json<Registration>, subs: web::Data<Arc<RWVec>>) -> Result<impl Responder> {
         let subscription = subscription.into_inner();

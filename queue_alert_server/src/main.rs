@@ -61,7 +61,6 @@ async fn main() -> std::io::Result<()> {
                 }
             }
 
-            log::debug!("pushing to clients");
             let parks = timer_client2.get_park_urls().await;
 
             if let Err(why) = &parks {
@@ -75,10 +74,15 @@ async fn main() -> std::io::Result<()> {
 
             let subs = timer_subs2.read().await;
 
+            log::debug!("pushing to {} clients", subs.len());
+
             //Push to all clients
             for sub in subs.iter() {
                 let url = parks.get(&sub.park);
-                if url.is_none() {continue}
+                if url.is_none() {
+                    log::error!("Submitted invalid park {}",sub.park);
+                    continue
+                }
 
                 let rides = timer_client2.get_ride_times(url.unwrap().to_owned()).await;
 

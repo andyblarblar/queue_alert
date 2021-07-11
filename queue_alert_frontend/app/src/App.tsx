@@ -16,7 +16,7 @@ import { ConfigProvider } from './components/ConfigStore';
 import { AlertConfig, getConfigFromSW } from './api/alertConfig';
 import { useEffect, useState } from 'react';
 
-//TODO wire up old and new service workers, then watch the app explode lol
+//TODO style the app and add to SW manifest
 export default function App() {
 
   //Load persisted config on app load

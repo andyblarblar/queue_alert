@@ -43,6 +43,7 @@ export default class QueueAlertAccess {
 
                 worker.pushManager.getSubscription()
                     .then((sub) => {
+                        console.debug(`got previous sub ${sub}`)
                         this.sub = sub
                     })
             })
@@ -93,6 +94,7 @@ export default class QueueAlertAccess {
     async subscribeUserToPush(): Promise<Result<null, Error>> {
         //If already subbed, just ignore
         if (this.sub) {
+            console.debug('Already subbed to push')
             return Ok(null)
         }
 
@@ -143,7 +145,8 @@ export default class QueueAlertAccess {
             return Err(1)
         }
         //Don't register twice
-        if (this.isRegistered) {
+        if (this.isRegistered) {//This can actually be removed if its buggy, as the server will just ignore the request. It will add a lot to traffic though.
+            console.debug('already registered')
             return Ok(null)
         }
 
@@ -156,9 +159,10 @@ export default class QueueAlertAccess {
             },
             body: body,
         });
-        console.debug("registering with server");
 
         if (res.ok) {
+
+            console.debug("registered with server");
             this.isRegistered = true
             return Ok(null)
         }
@@ -179,11 +183,6 @@ export default class QueueAlertAccess {
             return Err(1)
         }
 
-        //Ignore if not registered
-        if (!this.isRegistered) {
-            return Ok(null)
-        }
-
         const res = await fetch(this.url + '/unregister', {
             method: 'post',
             headers: {
@@ -191,9 +190,10 @@ export default class QueueAlertAccess {
             },
             body: JSON.stringify(this.sub),
         });
-        console.debug("unregistered with server");
 
         if (res.ok) {
+
+            console.debug("unregistered with server");
             this.isRegistered = false
             return Ok(null)
         }
