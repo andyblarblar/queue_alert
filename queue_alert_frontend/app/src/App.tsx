@@ -15,6 +15,8 @@ import { QaClientProvider } from './components/qaUrlStore';
 import { ConfigProvider } from './components/ConfigStore';
 import { AlertConfig, getConfigFromSW } from './api/alertConfig';
 import { useEffect, useState } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 //TODO style the app and add to SW manifest
 export default function App() {
@@ -40,7 +42,7 @@ export default function App() {
 
           </Switch>
         </Router>
-
+        <ToastContainer />
       </ConfigProvider>
     </QaClientProvider>
   );

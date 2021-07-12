@@ -5,6 +5,7 @@
 import { sendConfigToSW } from "../api/alertConfig"
 import { useConfig } from "./ConfigStore"
 import { useQaClient } from "./qaUrlStore"
+import { toast } from 'react-toastify';
 
 /**
  * A button that actually saves the config on the SW when clicked.
@@ -27,6 +28,7 @@ function ConfigSaveButton() {
 
         //Persist on SW
         await sendConfigToSW(config)
+        toast.success('Config saved!')
     }
 
     return (
