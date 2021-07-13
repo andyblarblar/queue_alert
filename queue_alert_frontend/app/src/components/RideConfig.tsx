@@ -98,7 +98,7 @@ const RideConfig: React.FC<props> = ({ rideInfo, currentAlert, onEnable, onDisab
             setSwitchChecked(true, () => {onEnable(config!, rideInfo.name)})
         }
         else {
-            setConfig(undefined, () => {onDisable(rideInfo.name); setSwitchChecked(false)})
+            setConfig(undefined, () => {onDisable(rideInfo.name); setSwitchChecked(false)})//TODO try flipping and chaing set switch to disable. This line here should be the issue.
         }
     }
 
