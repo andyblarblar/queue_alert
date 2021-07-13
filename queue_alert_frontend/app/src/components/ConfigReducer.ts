@@ -14,7 +14,7 @@ export const useConfigReducer = () => {
 }
 
 function initConfig(): AlertConfig {
-    return ["none",[]]
+    return ["none", []]
 }
 
 function reducer(state: AlertConfig, action: action) {
@@ -24,24 +24,24 @@ function reducer(state: AlertConfig, action: action) {
             if (action.ride == null) {
                 console.error('Submitted a new ride to the config, but the ride was undefined.')
                 return state
-            } 
+            }
 
             //Ignore if already in config
             if (state[1].find(r => r.rideName === action.ride?.rideName && r.alertOn === action.ride?.alertOn) != null) {
                 return state
             }
 
-            return [state[0],[...state[1].filter(r => r.rideName !== action.ride?.rideName), action.ride]] as AlertConfig
-        
+            return [state[0], [...state[1].filter(r => r.rideName !== action.ride?.rideName), action.ride]] as AlertConfig
+
         //Remove a ride from the config
         case 'removeRide':
             if (action.ride == null) {
                 console.error('Submitted a ride to remove from the config, but the ride was undefined.')
                 return state
-            } 
+            }
             const removedArr = state[1].filter(r => r.rideName !== action.ride?.rideName)
             return [state[0], removedArr] as AlertConfig
-            
+
         //Change the selected park and remove all old ride configs
         case 'changePark':
             if (action.park == null) {
@@ -50,8 +50,11 @@ function reducer(state: AlertConfig, action: action) {
             }
             const resetConfig = initConfig()
             resetConfig[0] = action.park
+            if (action.ride) {
+                resetConfig[1].push(action.ride)
+            }
             return resetConfig
-        
+
         //Used to load an old config from the SW 
         case 'loadConfig':
             if (action.oldConfig == null) {
@@ -60,7 +63,7 @@ function reducer(state: AlertConfig, action: action) {
             }
             return action.oldConfig
 
-        case 'reset': 
+        case 'reset':
             return initConfig()
 
         default:
@@ -75,7 +78,7 @@ function reducer(state: AlertConfig, action: action) {
  * 
  * removeRide - removes a ride from the config. Does nothing if ride was not in config. Must pass ride. Only the rideName is considered when removing, so state can be whatever.
  * 
- * changePark - changes the park containing the rides. This will reset the config. Must pass park. Think of this like changing the namespace
+ * changePark - changes the park containing the rides. This will reset the config. Must pass park and can pass a ride too to allow for atomic updates. Think of this like changing the namespace
  * of the ride configs, to specify, for example, what corkscrew is being alerted on.
  *  
  * reset - removes all rides and the park from the config.
@@ -90,5 +93,5 @@ export type action = {
         alertOn: "Open" | "Closed" | number
     },
     park?: string,
-    oldConfig?: AlertConfig 
+    oldConfig?: AlertConfig
 }

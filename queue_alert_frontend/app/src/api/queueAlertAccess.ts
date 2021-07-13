@@ -80,7 +80,6 @@ export default class QueueAlertAccess {
 
         if (res.ok) {
             let json = (await res.json()) as rideTime[]
-            console.log(JSON.stringify(json))
             return Ok(json)
         }
         else {

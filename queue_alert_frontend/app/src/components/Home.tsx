@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { parkMap } from "../api/queueAlertAccess"
 import { useConfig } from "./ConfigStore"
+import ConfigTable from "./configTable"
 import { useQaClient } from "./qaUrlStore"
 
 function Home() {
@@ -28,7 +29,7 @@ function Home() {
                 console.debug(err)
                 seterror(true)
             })
-    }, [])
+    }, [client])
 
 
     if (!error && parkmap.size === 0) {
@@ -48,10 +49,13 @@ function Home() {
     else {
         return (
             <div>
-                <p>config: {JSON.stringify(config[1])}</p>
-                {
-                    createParkList(parkmap)
-                }
+                <ConfigTable />
+                <p id="parkprompt">Please select a park:</p>
+                <div className="parks-container">
+                    {
+                        createParkList(parkmap)
+                    }
+                </div>
             </div>
         )
     }
@@ -60,20 +64,17 @@ function Home() {
 function createParkList(parkmap: parkMap): JSX.Element[] {
     let htmlList = []
 
-    let index = 0
     for (const [park, url] of Object.entries(parkmap)) {
         let safeUrl = park.replaceAll(' ', '-')
         let safeQuery = new URLSearchParams({ "url": url.toString() }).toString()
 
         let tsx = (
-            <>
-                <Link to={'/park/' + safeUrl + '?' + safeQuery} key={index}>{park}</Link>
-                <br />
-            </>
+            <div className="park-link" key={park}>
+                <Link to={'/park/' + safeUrl + '?' + safeQuery}>{park}</Link>
+            </div>
         )
 
         htmlList.push(tsx)
-        index += 1
     }
     return htmlList
 }

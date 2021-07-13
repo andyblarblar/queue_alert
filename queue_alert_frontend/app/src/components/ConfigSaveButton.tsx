@@ -2,15 +2,19 @@
  * Copyright (c) 2021. Andrew Ealovega
  */
 
-import { sendConfigToSW } from "../api/alertConfig"
+import { AlertConfig, sendConfigToSW } from "../api/alertConfig"
 import { useConfig } from "./ConfigStore"
 import { useQaClient } from "./qaUrlStore"
 import { toast } from 'react-toastify';
 
+
+type props = { onSave? : (conf: AlertConfig) => void}
+
 /**
  * A button that actually saves the config on the SW when clicked.
+ * onSave prop is called when a config is successfully saved to the SW.
  */
-function ConfigSaveButton() {
+ const ConfigSaveButton: React.FC<props> = ({ onSave }) => {
     const [config, _] = useConfig()
     const { client } = useQaClient()
 
@@ -29,6 +33,8 @@ function ConfigSaveButton() {
         //Persist on SW
         await sendConfigToSW(config)
         toast.success('Config saved!')
+
+        if (onSave) {onSave(config)}
     }
 
     return (

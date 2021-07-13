@@ -6,9 +6,10 @@
  * @file Component that contains the controls for configuring a ride.
  */
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { rideTime } from "../api/queueAlertAccess"
 import Switch from "react-switch"
+import useStateCallback from "../api/useEffectCallback"
 
 type currentAlertOn = "Open" | "Closed" | number
 
@@ -21,11 +22,14 @@ type props = {
     onEnable: (userSelection: "Open" | "Closed" | number, rideName: string) => void
     /**Called when config is disabled*/
     onDisable: (rideName: string) => void
+    onChange?: () => void
 }
 
-const RideConfig: React.FC<props> = ({ rideInfo, currentAlert, onEnable, onDisable }) => {
-    const [config, setConfig] = useState<currentAlertOn | undefined>(currentAlert)
-    const [switchChecked, setSwitchChecked] = useState(config != null)
+const RideConfig: React.FC<props> = ({ rideInfo, currentAlert, onEnable, onDisable, onChange }) => {
+    const [config, setConfig] = useStateCallback<currentAlertOn | undefined>(currentAlert)
+    const [switchChecked, setSwitchChecked] = useStateCallback(config != null)
+
+    useEffect(() => { if (onChange) { onChange() } })
 
     /**Creates the select component that handles the user facing alert configs*/
     const getSelect = () => {
@@ -39,18 +43,18 @@ const RideConfig: React.FC<props> = ({ rideInfo, currentAlert, onEnable, onDisab
                         break;
 
                     case "Open":
-                        onEnable("Open", rideInfo.name)
-                        setConfig("Open")
+                        //onEnable("Open", rideInfo.name)//TODO this is an issue, cause modifying the config in enable is overridden by config. we need to swap the order
+                        setConfig("Open", () => { onEnable('Open', rideInfo.name) })
                         break;
 
                     case "Closed":
-                        onEnable("Closed", rideInfo.name)
-                        setConfig("Closed")
+                        //onEnable("Closed", rideInfo.name)
+                        setConfig("Closed", () => { onEnable('Closed', rideInfo.name) })
                         break;
 
                     default:
-                        onEnable(parseInt(event.target.value), rideInfo.name)
-                        setConfig(parseInt(event.target.value))
+                        //onEnable(parseInt(event.target.value), rideInfo.name)
+                        setConfig(parseInt(event.target.value), () => { onEnable(parseInt(event.target.value), rideInfo.name) })
                         break;
                 }
             }
@@ -91,13 +95,10 @@ const RideConfig: React.FC<props> = ({ rideInfo, currentAlert, onEnable, onDisab
     /**Call the respective prop when switch is activated.*/
     const onSwitchEnable = (checked: boolean, event: MouseEvent | React.SyntheticEvent<MouseEvent | KeyboardEvent, Event>, id: string) => {
         if (checked) {
-            onEnable(config!, rideInfo.name)
-            setSwitchChecked(true)
+            setSwitchChecked(true, () => {onEnable(config!, rideInfo.name)})
         }
         else {
-            onDisable(rideInfo.name)
-            setConfig(undefined)
-            setSwitchChecked(false)
+            setConfig(undefined, () => {onDisable(rideInfo.name); setSwitchChecked(false)})
         }
     }
 

@@ -2,19 +2,19 @@
  * Copyright (c) 2021. Andrew Ealovega
  */
 
-import {Result, Ok, Err} from "ts-results";
+import { Result, Ok, Err } from "ts-results";
 
 /**
  * Tuple of {parkname, all rides for that park}. alertOn number is always the wait in minutes.
  */
 export type AlertConfig = [string, rideConfig[]]
 
-export type rideConfig = {rideName: string, alertOn: "Open" | "Closed" | number}
+export type rideConfig = { rideName: string, alertOn: "Open" | "Closed" | number }
 
 /**
  * Message format for communicating with SW. Set generic to discriminated union of possible message types.
  */
-export type swMessage<T> = {type:T, message:unknown}
+export type swMessage<T> = { type: T, message: unknown }
 
 /**
  * type is one of:
@@ -30,9 +30,9 @@ export type alertConfigMessageType = 'setConfig' | 'getConfig'
 export async function sendConfigToSW(config: AlertConfig): Promise<Result<null, Error>> {
     let SW = await navigator.serviceWorker.getRegistration('/')
 
-    if (SW?.active == null) {return Err(new Error("No serviceworker registered"))}
+    if (SW?.active == null) { return Err(new Error("No serviceworker registered")) }
 
-    SW.active.postMessage({type: 'setConfig', message: config})
+    SW.active.postMessage({ type: 'setConfig', message: config })
 
     console.debug("Posted new config to SW")
 
@@ -67,7 +67,7 @@ export async function getConfigFromSW(): Promise<AlertConfig | null> {
         navigator.serviceWorker.addEventListener('message', onResponse)
 
         //Spin until we get a response
-        while (config === undefined){
+        while (config === undefined) {
             await sleep(5)
         }
 
@@ -78,7 +78,7 @@ export async function getConfigFromSW(): Promise<AlertConfig | null> {
     })
 
     //Send message and wait until we get a response
-    SW?.active?.postMessage({type: 'getConfig', message: null})
+    SW?.active?.postMessage({ type: 'getConfig', message: null })
     const config = await responsePromise
 
     return config as AlertConfig | null

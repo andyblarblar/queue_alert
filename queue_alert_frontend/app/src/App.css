@@ -2,41 +2,94 @@
  * Copyright (c) 2021. Andrew Ealovega
  */
 
-.App {
-  text-align: center;
+@charset "UTF-8";
+/*
+ * Copyright (c) 2021. Andrew Ealovega
+ */
+
+/*Color scheme*/ 
+:root {
+  /* CSS HEX */
+--highlight: #8d402a;
+--second-layer: #E89F71;
+--background: #EDCFA9;
+--border: #855846a2;
+--dim-gray: #6e675fff;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+html {
+  background-color: var(--background);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.park-link {
+  background-color: var(--second-layer);
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  max-width: max-content;
+
+  margin-right: 10px;
+  margin-bottom: 10px;
+  padding: 5px;
+
+  float: left;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+.park-link:hover {
+    opacity: 70%;
+    transition: opacity 50ms;
 }
 
-.App-link {
-  color: #61dafb;
+.park-link > a {
+  color: var(--highlight);
+  text-decoration-line: none;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.park-link > a:visited {
+  color: var(--highlight);
+}
+
+.parks-container {
+  /* background-color: #e4c7a3; */
+  padding: 10px;
+  overflow: hidden;
+  background-image: linear-gradient(to bottom, rgba(255,0,0,0), #e4c7a3);
+}
+
+#parkprompt {
+  font-family: 'Raleway', sans-serif;
+  font-weight: bolder;
+  font-size: 30px;
+}
+
+.config-table {
+  background-color: var(--second-layer);
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  max-width: max-content;
+
+  padding: 15px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 10px;
+  margin-bottom: 20px;
+
+  border-radius: 7px;
+}
+
+.config-table > table {
+  border-collapse: collapse;
+  border: 3px solid var(--border);
+}
+
+.config-table > table > tbody > th, td {
+  border: 2px solid var(--border);
+  padding: 0.5rem;
+  text-align: left;
+  font-family: 'Raleway', sans-serif;
+}
+
+.config-table > table > caption {
+  font-family: 'Raleway', sans-serif;
+  color: var(--highlight);
+  font-size: x-large;
+  font-weight: 600;
+  margin-bottom: 5px;
 }

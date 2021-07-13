@@ -100,7 +100,7 @@ self.addEventListener('message', (event) => {
 /**
  * Locks write access to `config` when config is being read.
  */
- let configMutex: Mutex = new Mutex()
+let configMutex: Mutex = new Mutex()
 
 /** Loads the config from the db if it exists. Will be null if not set. */
 function loadConfig() {

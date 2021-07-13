@@ -17,6 +17,7 @@ import { AlertConfig, getConfigFromSW } from './api/alertConfig';
 import { useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import './App.css'
 
 //TODO style the app and add to SW manifest
 export default function App() {
