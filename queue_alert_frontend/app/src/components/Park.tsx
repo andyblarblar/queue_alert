@@ -12,6 +12,8 @@ import { useConfig } from "./ConfigStore"
 import ConfigTable from "./configTable"
 import { useQaClient } from "./qaUrlStore"
 import RideConfig from "./RideConfig"
+import _ from "lodash"
+import useStateCallback from "../api/useEffectCallback"
 
 function Park() {
     let { park } = useParams<{ park: string }>()
@@ -37,8 +39,9 @@ function Park() {
     }, [client, parkUrl])
 
     //Handling config state
+    const [supressUnmountEffectCall, setSupressUnmountEffectCall] = useStateCallback(false)
     const [config, dispatch] = useConfig()
-    const [oldConfig, setOldConfig] = useState(JSON.parse(JSON.stringify(config)) as AlertConfig) //Clone old config for diffing
+    const [oldConfig, setOldConfig] = useStateCallback(_.cloneDeep(config)) //Clone old config for diffing
 
     useEffect(() => {
         //Reset the config to null if nothing is selected. This prevents the empty table glitch.
@@ -55,28 +58,35 @@ function Park() {
         console.debug(`config is ${JSON.stringify(config[1])} oldconfig is ${JSON.stringify(oldConfig[1])}`)
 
         //Display save warning if not already visible and changes have been made.
-        if (!arrayEqualNoOrder(config[1], oldConfig[1]) && !toast.isActive(1234)) {
+        if (!_.isEqual(config[1], oldConfig[1]) && !toast.isActive(1234)) {
             toast.warn('You have unsaved changes!', { closeButton: false, autoClose: false, toastId: 1234, draggable: false, closeOnClick: false })
         }
-        else if (arrayEqualNoOrder(config[1], oldConfig[1]) && toast.isActive(1234)) { //Remove if oldConfig is config ie no changes
-            toast.dismiss(1234)
+        else if (_.isEqual(config[1], oldConfig[1]) && toast.isActive(1234)) { //Remove toast if changes are reverted.
+            toast.dismiss(1234)//TODO does this trigger a rerender? May be cause of double update. Not that thats an issue anymore.
         }
     }, [config, oldConfig])
 
     //Remove the above set 'not saved' toast if user navigates back, and reset config to last saved.
     useEffect(() => {
         return () => {
-            console.error('In the unmount early!')//TODO this is firing too early and causing weirdness.
-            toast.dismiss(1234)
-            dispatch({
-                type: 'loadConfig',
-                oldConfig: oldConfig
-            })
+            if (!supressUnmountEffectCall) {//Failing to have a check here will cause the oldConfig to be applied to the config on save. This effect should only fire on unmount.
+                console.debug(`in the unmount, oldConfig is:` + JSON.stringify(oldConfig))
+                dispatch({
+                    type: 'loadConfig',
+                    oldConfig: oldConfig
+                })
+                toast.dismiss(1234)
+            }
+            else {
+                console.debug('unmount supressed')
+                setSupressUnmountEffectCall(false)//TODO after a save supress is not removed, so pressing back will keep the wrong config. This should be the last bug. The problem is that the supress doesnt actually take  
+            }
         }
-    }, [])//Ignore this lint, this must only run on umount
+    }, [dispatch, oldConfig, setSupressUnmountEffectCall, supressUnmountEffectCall])
 
     //Callback to add ride
     const onRideEnable = (userSelection: "Open" | "Closed" | number, rideName: string) => {
+        console.debug('on onEnable')
         //If this is the first ride selected in a new park, then change to this park.
         if (config[0] !== park) {
             dispatch({
@@ -111,7 +121,8 @@ function Park() {
 
     const onSave = (conf: AlertConfig) => {
         toast.dismiss(1234)
-        setOldConfig(conf)
+        console.debug(`after save setting oldConf to ${conf}`)
+        setOldConfig(_.cloneDeep(conf), () => { setSupressUnmountEffectCall(true) }) //TODO use useRef for supress, as it doesnt cause re render. the issue is that the unmount logic is called multiple times even before unmount, messing with supress.
     }
 
     if (error) {
@@ -137,19 +148,6 @@ function Park() {
             <ConfigSaveButton onSave={onSave} />
         </div>
     )
-}
-
-/** Checks if arrays contain the same elements, out of order. */
-function arrayEqualNoOrder<T>(arr1: Array<T>, arr2: Array<T>): boolean {
-    //if (arr1.length !== arr2.length) { return false }
-
-    for (const elm of arr1) {
-        const res = arr2.includes(elm)
-
-        if (!res) { return false }
-    }
-
-    return true
 }
 
 function useQuery() {
