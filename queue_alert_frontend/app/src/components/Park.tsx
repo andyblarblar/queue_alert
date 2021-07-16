@@ -2,7 +2,7 @@
  * Copyright (c) 2021. Andrew Ealovega
  */
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useLocation, useParams } from "react-router"
 import { toast } from "react-toastify"
 import { AlertConfig } from "../api/alertConfig"
@@ -13,7 +13,6 @@ import ConfigTable from "./configTable"
 import { useQaClient } from "./qaUrlStore"
 import RideConfig from "./RideConfig"
 import _ from "lodash"
-import useStateCallback from "../api/useEffectCallback"
 
 function Park() {
     let { park } = useParams<{ park: string }>()
@@ -39,9 +38,8 @@ function Park() {
     }, [client, parkUrl])
 
     //Handling config state
-    const [supressUnmountEffectCall, setSupressUnmountEffectCall] = useStateCallback(false)
     const [config, dispatch] = useConfig()
-    const [oldConfig, setOldConfig] = useStateCallback(_.cloneDeep(config)) //Clone old config for diffing
+    const oldConfig = useRef(_.cloneDeep(config)) //Clone old config for diffing
 
     useEffect(() => {
         //Reset the config to null if nothing is selected. This prevents the empty table glitch.
@@ -55,13 +53,14 @@ function Park() {
 
     //Manage toast state each update
     useEffect(() => {
-        console.debug(`config is ${JSON.stringify(config[1])} oldconfig is ${JSON.stringify(oldConfig[1])}`)
+        console.debug(`config is ${JSON.stringify(config[1])} oldconfig is ${JSON.stringify(oldConfig.current[1])}`)
 
         //Display save warning if not already visible and changes have been made.
-        if (!_.isEqual(config[1], oldConfig[1]) && !toast.isActive(1234)) {
+        if (!_.isEqual(config[1], oldConfig.current[1]) && !toast.isActive(1234)) {
             toast.warn('You have unsaved changes!', { closeButton: false, autoClose: false, toastId: 1234, draggable: false, closeOnClick: false })
         }
-        else if (_.isEqual(config[1], oldConfig[1]) && toast.isActive(1234)) { //Remove toast if changes are reverted.
+        //Remove toast if changes are reverted.
+        else if (_.isEqual(config[1], oldConfig.current[1]) && toast.isActive(1234)) {
             toast.dismiss(1234)//TODO does this trigger a rerender? May be cause of double update. Not that thats an issue anymore.
         }
     }, [config, oldConfig])
@@ -69,20 +68,14 @@ function Park() {
     //Remove the above set 'not saved' toast if user navigates back, and reset config to last saved.
     useEffect(() => {
         return () => {
-            if (!supressUnmountEffectCall) {//Failing to have a check here will cause the oldConfig to be applied to the config on save. This effect should only fire on unmount.
-                console.debug(`in the unmount, oldConfig is:` + JSON.stringify(oldConfig))
-                dispatch({
-                    type: 'loadConfig',
-                    oldConfig: oldConfig
-                })
-                toast.dismiss(1234)
-            }
-            else {
-                console.debug('unmount supressed')
-                setSupressUnmountEffectCall(false)//TODO after a save supress is not removed, so pressing back will keep the wrong config. This should be the last bug. The problem is that the supress doesnt actually take  
-            }
+            console.debug(`in the unmount, oldConfig is:` + JSON.stringify(oldConfig.current))
+            dispatch({
+                type: 'loadConfig',
+                oldConfig: oldConfig.current
+            })
+            toast.dismiss(1234)
         }
-    }, [dispatch, oldConfig, setSupressUnmountEffectCall, supressUnmountEffectCall])
+    }, [dispatch, oldConfig])
 
     //Callback to add ride
     const onRideEnable = (userSelection: "Open" | "Closed" | number, rideName: string) => {
@@ -122,7 +115,7 @@ function Park() {
     const onSave = (conf: AlertConfig) => {
         toast.dismiss(1234)
         console.debug(`after save setting oldConf to ${conf}`)
-        setOldConfig(_.cloneDeep(conf), () => { setSupressUnmountEffectCall(true) }) //TODO use useRef for supress, as it doesnt cause re render. the issue is that the unmount logic is called multiple times even before unmount, messing with supress.
+        oldConfig.current = _.cloneDeep(config)
     }
 
     if (error) {

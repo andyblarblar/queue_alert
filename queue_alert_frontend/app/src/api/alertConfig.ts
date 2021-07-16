@@ -78,7 +78,7 @@ export async function getConfigFromSW(): Promise<AlertConfig | null> {
     })
 
     //Send message and wait until we get a response
-    SW?.active?.postMessage({ type: 'getConfig', message: null })
+    SW!.active!.postMessage({ type: 'getConfig', message: null })
     const config = await responsePromise
 
     return config as AlertConfig | null

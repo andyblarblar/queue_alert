@@ -8,13 +8,13 @@ import { useQaClient } from "./qaUrlStore"
 import { toast } from 'react-toastify';
 
 
-type props = { onSave? : (conf: AlertConfig) => void}
+type props = { onSave?: (conf: AlertConfig) => void }
 
 /**
  * A button that actually saves the config on the SW when clicked.
  * onSave prop is called when a config is successfully saved to the SW.
  */
- const ConfigSaveButton: React.FC<props> = ({ onSave }) => {
+const ConfigSaveButton: React.FC<props> = ({ onSave }) => {//TODO style
     const [config, _] = useConfig()
     const { client } = useQaClient()
 
@@ -34,7 +34,7 @@ type props = { onSave? : (conf: AlertConfig) => void}
         await sendConfigToSW(config)
         toast.success('Config saved!')
 
-        if (onSave) {onSave(config)}
+        if (onSave) { onSave(config) }
     }
 
     return (

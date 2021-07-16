@@ -20,6 +20,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './App.css'
 
 //TODO style the app and add to SW manifest
+//TODO add a side menu that has an about/FAQ page, as well as return to home.
 export default function App() {
 
   //Load persisted config on app load

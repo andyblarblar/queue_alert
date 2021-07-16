@@ -3,9 +3,6 @@
  */
 
 @charset "UTF-8";
-/*
- * Copyright (c) 2021. Andrew Ealovega
- */
 
 /*Color scheme*/ 
 :root {
@@ -34,7 +31,7 @@ html {
 }
 
 .park-link:hover {
-    opacity: 70%;
+    opacity: 70%; /*TODO this becomes 1% in the final build for some reason*/
     transition: opacity 50ms;
 }
 

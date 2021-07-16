@@ -42,7 +42,6 @@ const RideConfig: React.FC<props> = ({ rideInfo, currentAlert, onEnable, onDisab
                         break;
 
                     case "Open":
-                        //onEnable("Open", rideInfo.name)//TODO this is an issue, cause modifying the config in enable is overridden by config. we need to swap the order
                         onEnable('Open', rideInfo.name)
                         setConfig("Open")
                         break;
@@ -98,7 +97,7 @@ const RideConfig: React.FC<props> = ({ rideInfo, currentAlert, onEnable, onDisab
             setSwitchChecked(true, () => { onEnable(config!, rideInfo.name) })
         }
         else {
-            setConfig(undefined, () => { console.log('set checked'); setSwitchChecked(false, () => { console.log('on disable'); onDisable(rideInfo.name) }) })
+            setConfig(undefined, () => { console.log('set checked'); setSwitchChecked(false, () => { onDisable(rideInfo.name) }) })
         }
     }
 

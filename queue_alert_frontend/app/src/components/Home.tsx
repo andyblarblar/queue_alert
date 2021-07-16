@@ -5,7 +5,6 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { parkMap } from "../api/queueAlertAccess"
-import { useConfig } from "./ConfigStore"
 import ConfigTable from "./configTable"
 import { useQaClient } from "./qaUrlStore"
 
@@ -13,7 +12,6 @@ function Home() {
     const [parkmap, setparkmap] = useState(new Map<string, string>())
     const [error, seterror] = useState(false)
     const { client } = useQaClient()
-    const [config, _] = useConfig()//TODO remove
 
     useEffect(() => {
         //Hit backend
@@ -32,14 +30,14 @@ function Home() {
     }, [client])
 
 
-    if (!error && parkmap.size === 0) {
+    if (!error && parkmap.size === 0) {//TODO change to spinner
         return (
             <div>
                 <p>Loading...</p>
             </div>
         )
     }
-    else if (error) {
+    else if (error) {//TODO make error component for use in connection errors
         return (
             <div>
                 <p style={{ color: 'red' }}>Could not hit backend!</p>
