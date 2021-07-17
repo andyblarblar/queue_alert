@@ -6,7 +6,7 @@
  * @file Component that contains the controls for configuring a ride.
  */
 
-import React, { useEffect, useState } from "react"
+import React from "react"
 import { rideTime } from "../api/queueAlertAccess"
 import Switch from "react-switch"
 import useStateCallback from "../api/useEffectCallback"

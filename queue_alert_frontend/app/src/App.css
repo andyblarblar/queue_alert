@@ -7,8 +7,9 @@
 /*Color scheme*/ 
 :root {
   /* CSS HEX */
---highlight: #8d402a;
+--highlight: #522a0f;
 --second-layer: #E89F71;
+--button: #96491afa;
 --background: #EDCFA9;
 --border: #855846a2;
 --dim-gray: #6e675fff;
@@ -16,6 +17,67 @@
 
 html {
   background-color: var(--background);
+}
+
+.app-container {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+}
+
+.bar-container {
+  position: fixed;
+  height: 100%;
+}
+
+/*Causes the content of the site to respect the space taken up by the bar when present.*/
+@media only screen and (min-width: 1200px){
+  .content-container {
+    margin-left: 9.5vw;
+    height: 100%;
+    width: 100%;
+  }
+}
+
+@media only screen and (max-width: 1200px){
+  /*Allows bar to avoid clipping with switches*/
+  .bar-container {
+    z-index: 2;
+  }
+}
+
+#designed-by {
+  font-size: x-small;
+  opacity: 0.6;
+}
+
+.hamburger {
+  height: 6vh;
+}
+
+.hamburger > button {
+  display: inline-block;
+  border: none;
+  text-decoration: none;
+  background: #006bed00;
+  color: #ffffff;
+  font-size: 1rem;
+  cursor: pointer;
+
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+
+  padding-top: 2vh;
+  padding-left: 4vw;
+}
+
+.hamburger > button:hover {
+  opacity: 0.6;
+
+  transition: opacity 90ms;
+}
+
+.hamburger > button > svg {
+  transform: scale(1.5);
 }
 
 .park-link {
@@ -31,7 +93,7 @@ html {
 }
 
 .park-link:hover {
-    opacity: 70%; /*TODO this becomes 1% in the final build for some reason*/
+    opacity: 0.7;
     transition: opacity 50ms;
 }
 

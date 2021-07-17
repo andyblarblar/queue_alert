@@ -57,7 +57,7 @@ function Park() {
 
         //Display save warning if not already visible and changes have been made.
         if (!_.isEqual(config[1], oldConfig.current[1]) && !toast.isActive(1234)) {
-            toast.warn('You have unsaved changes!', { closeButton: false, autoClose: false, toastId: 1234, draggable: false, closeOnClick: false })
+            toast.warn('You have unsaved changes!', { closeButton: false, autoClose: false, toastId: 1234, draggable: false, closeOnClick: false, position: 'bottom-right' })
         }
         //Remove toast if changes are reverted.
         else if (_.isEqual(config[1], oldConfig.current[1]) && toast.isActive(1234)) {

@@ -48,6 +48,7 @@ function Home() {
         return (
             <div>
                 <ConfigTable />
+
                 <p id="parkprompt">Please select a park:</p>
                 <div className="parks-container">
                     {

@@ -15,35 +15,68 @@ import { QaClientProvider } from './components/qaUrlStore';
 import { ConfigProvider } from './components/ConfigStore';
 import { AlertConfig, getConfigFromSW } from './api/alertConfig';
 import { useEffect, useState } from 'react';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css'
+import 'react-pro-sidebar/dist/css/styles.css';
+import { useMediaQuery } from 'react-responsive'
+import Hamburger from './components/hamburger';
+import SideBar from './components/SideBar';
+import Headroom from 'react-headroom'
 
-//TODO style the app and add to SW manifest
-//TODO add a side menu that has an about/FAQ page, as well as return to home.
+//TODO finish tuning the header, color the sidebar, and style the park pages.
 export default function App() {
 
   //Load persisted config on app load
   const initalConfig = useSWConfig()
 
+  //Media query to enable disable hamburger to un-collapse the sidebar
+  const isLargeScreen = useMediaQuery({ query: "(min-width: 1200px)" })
+
+  const [sideBarOpen, setSideBarOpen] = useState(isLargeScreen)
+
+  const hamburgerOrNot = () => {
+    return !isLargeScreen ? <Headroom
+      style={{
+        background: '#96491af8',
+        boxShadow: '1px 1px 1px rgba(0,0,0,0.55)',
+      }}>
+      <Hamburger onClick={() => { setSideBarOpen(true) }} />
+    </Headroom>
+      : <> </>
+  }
+
   return (
     <QaClientProvider url="http://localhost:8080">
       <ConfigProvider oldConfig={initalConfig ?? undefined}>
 
-        <Router>
-          <Switch>
+        <div className="app-container">
+          <Router>
 
-            <Route exact path="/">
-              <Home />
-            </Route>
-            {/** Put other set paths eg. about here*/}
+            <div className="bar-container">
+              <SideBar toggled={sideBarOpen} onToggle={(val) => { setSideBarOpen(!sideBarOpen) }} />
+            </div>
 
-            <Route path="/park/:park">
-              <Park />
-            </Route>
+            <div className="content-container">
+              {hamburgerOrNot()}
 
-          </Switch>
-        </Router>
+              <Switch>
+
+                <Route exact path="/">
+                  <Home />
+                </Route>
+                {/** Put other set paths eg. about here*/}
+
+                <Route path="/park/:park">
+                  <Park />
+                </Route>
+
+              </Switch>
+            </div>
+
+          </Router>
+        </div>
+
         <ToastContainer />
       </ConfigProvider>
     </QaClientProvider>
