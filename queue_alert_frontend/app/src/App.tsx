@@ -35,11 +35,13 @@ export default function App() {
 
   const [sideBarOpen, setSideBarOpen] = useState(isLargeScreen)
 
+  //Enables the hamburger header on mobile.
   const hamburgerOrNot = () => {
     return !isLargeScreen ? <Headroom
       style={{
         background: '#96491af8',
         boxShadow: '1px 1px 1px rgba(0,0,0,0.55)',
+        width: '100%'
       }}>
       <Hamburger onClick={() => { setSideBarOpen(true) }} />
     </Headroom>
@@ -54,7 +56,7 @@ export default function App() {
           <Router>
 
             <div className="bar-container">
-              <SideBar toggled={sideBarOpen} onToggle={(val) => { setSideBarOpen(!sideBarOpen) }} />
+              <SideBar toggled={sideBarOpen} onToggle={(val) => { setSideBarOpen(!sideBarOpen) }} onItemClick={() => { setSideBarOpen(!sideBarOpen) }} />
             </div>
 
             <div className="content-container">

@@ -28,8 +28,6 @@ const RideConfig: React.FC<props> = ({ rideInfo, currentAlert, onEnable, onDisab
     const [config, setConfig] = useStateCallback<currentAlertOn | undefined>(currentAlert)
     const [switchChecked, setSwitchChecked] = useStateCallback(config != null)
 
-    //useEffect(() => { if (onChange) { onChange() } })
-
     /**Creates the select component that handles the user facing alert configs*/
     const getSelect = () => {
         const opt = Array(80).fill(0).map((_, i) => (i + 1) * 5);

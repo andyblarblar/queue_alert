@@ -30,7 +30,7 @@ export type alertConfigMessageType = 'setConfig' | 'getConfig'
 export async function sendConfigToSW(config: AlertConfig): Promise<Result<null, Error>> {
     let SW = await navigator.serviceWorker.getRegistration('/')
 
-    if (SW?.active == null) { return Err(new Error("No serviceworker registered")) }
+    if (SW?.active == null) { return Err(new Error("No serviceworker registered. Try reloading the page. If this doesn't work, your browser may be out of date.")) }
 
     SW.active.postMessage({ type: 'setConfig', message: config })
 

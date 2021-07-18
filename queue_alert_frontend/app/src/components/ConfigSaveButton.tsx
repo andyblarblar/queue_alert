@@ -31,10 +31,18 @@ const ConfigSaveButton: React.FC<props> = ({ onSave }) => {//TODO style
         }
 
         //Persist on SW
-        await sendConfigToSW(config)
-        toast.success('Config saved!')
+        const saveResult = await sendConfigToSW(config)
 
-        if (onSave) { onSave(config) }
+        if (saveResult.ok) {
+            toast.success('Config saved!')
+        }
+        else {
+            toast.error('Failed to save! ' + saveResult.val.message)
+        }
+
+        if (onSave && saveResult.ok) { 
+            onSave(config) 
+        }
     }
 
     return (

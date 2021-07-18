@@ -2,6 +2,10 @@
  * Copyright (c) 2021. Andrew Ealovega
  */
 
+/**
+ * @file Config page for a park.
+ */
+
 import { useEffect, useRef, useState } from "react"
 import { useLocation, useParams } from "react-router"
 import { toast } from "react-toastify"
@@ -13,11 +17,17 @@ import ConfigTable from "./configTable"
 import { useQaClient } from "./qaUrlStore"
 import RideConfig from "./RideConfig"
 import _ from "lodash"
+import { useMediaQuery } from "react-responsive"
 
+/**
+ * Config page for a park.
+ */
 function Park() {
     let { park } = useParams<{ park: string }>()
     park = park.split('?')[0].replaceAll('-', ' ') //Remove query string and hyphens
     const parkUrl = useQuery().get('url')
+
+    const isMobile = useMediaQuery({ query: "(max-width: 1200px)" })
 
     const { client } = useQaClient()
     const [error, setError] = useState(false)
@@ -57,13 +67,14 @@ function Park() {
 
         //Display save warning if not already visible and changes have been made.
         if (!_.isEqual(config[1], oldConfig.current[1]) && !toast.isActive(1234)) {
-            toast.warn('You have unsaved changes!', { closeButton: false, autoClose: false, toastId: 1234, draggable: false, closeOnClick: false, position: 'bottom-right' })
+            //const styles = isMobile ? { width: '50%', marginLeft: 'auto' } : {} //Prevent the size of banner from covering save btn on mobile
+            toast.warn('You have unsaved changes!', { closeButton: false, autoClose: false, toastId: 1234, draggable: false, closeOnClick: false, position: (isMobile ? 'bottom-right' : 'top-right')})
         }
         //Remove toast if changes are reverted.
         else if (_.isEqual(config[1], oldConfig.current[1]) && toast.isActive(1234)) {
             toast.dismiss(1234)//TODO does this trigger a rerender? May be cause of double update. Not that thats an issue anymore.
         }
-    }, [config, oldConfig])
+    }, [config, isMobile, oldConfig])
 
     //Remove the above set 'not saved' toast if user navigates back, and reset config to last saved.
     useEffect(() => {

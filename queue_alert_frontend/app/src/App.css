@@ -21,8 +21,6 @@ html {
 
 .app-container {
   height: 100%;
-  width: 100%;
-  position: absolute;
 }
 
 .bar-container {
@@ -35,7 +33,11 @@ html {
   .content-container {
     margin-left: 9.5vw;
     height: 100%;
-    width: 100%;
+  }
+
+  .app-container {
+    /*Fixes the headbar from not being fullscreen, but breaks if not on mobile.*/
+    position: absolute
   }
 }
 
@@ -44,6 +46,11 @@ html {
   .bar-container {
     z-index: 2;
   }
+
+  .Toastify__toast-container.Toastify__toast-container--bottom-right {
+    width: 50%;
+    margin-left: auto;
+  } 
 }
 
 #designed-by {
@@ -152,3 +159,4 @@ html {
   font-weight: 600;
   margin-bottom: 5px;
 }
+
