@@ -7,7 +7,7 @@
  */
 
 
-import { Err, Ok, Result } from "ts-results";
+import {Err, Ok, Result} from "ts-results";
 
 /**
  * Map of park name to its ride page url.
@@ -16,7 +16,7 @@ export type parkMap = Map<string, string>
 
 /**
  * A ride status record. Wait time is always in minutes.
-*/
+ */
 export type rideTime = { name: string, status: "Open" | "Closed" | { Wait: number } }
 
 /**
@@ -60,8 +60,7 @@ export default class QueueAlertAccess {
         if (res.ok) {
             let json = (await res.json()) as parkMap
             return Ok(json)
-        }
-        else {
+        } else {
             return Err(res.status)
         }
     }
@@ -74,15 +73,14 @@ export default class QueueAlertAccess {
     async getParkRideTimes(url: URL): Promise<Result<rideTime[], number>> {
 
         let req = '/parkWaitTimes?'
-        req += new URLSearchParams({ "url": url.toString() }).toString()
+        req += new URLSearchParams({"url": url.toString()}).toString()
 
         let res = await fetch(this.url + req.toString())
 
         if (res.ok) {
             let json = (await res.json()) as rideTime[]
             return Ok(json)
-        }
-        else {
+        } else {
             return Err(res.status)
         }
     }
@@ -149,24 +147,27 @@ export default class QueueAlertAccess {
             return Ok(null)
         }
 
-        const body = JSON.stringify({ sub: this.sub, park: park });
+        const body = JSON.stringify({sub: this.sub, park: park});
+        console.debug(`attempting to register with: ${JSON.stringify(body)}`)
 
-        const res = await fetch(this.url + '/register', {
-            method: 'post',
-            headers: {
-                'Content-type': 'application/json'
-            },
-            body: body,
-        });
+        try {
+            const res = await fetch(this.url + '/register', {
+                method: 'post',
+                headers: {
+                    'Content-type': 'application/json'
+                },
+                body: body,
+            });
 
-        if (res.ok) {
-
-            console.debug("registered with server");
-            this.isRegistered = true
-            return Ok(null)
-        }
-        else {
-            return Err(res.status)
+            if (res.ok) {
+                console.debug("registered with server");
+                this.isRegistered = true
+                return Ok(null)
+            } else {
+                return Err(res.status)
+            }
+        } catch (e) {
+            return Err(400)
         }
     }
 
@@ -195,8 +196,7 @@ export default class QueueAlertAccess {
             console.debug("unregistered with server");
             this.isRegistered = false
             return Ok(null)
-        }
-        else {
+        } else {
             return Err(res.status)
         }
     }

@@ -24,7 +24,7 @@ import Hamburger from './components/hamburger';
 import SideBar from './components/SideBar';
 import Headroom from 'react-headroom'
 
-//TODO finish tuning the header, color the sidebar, and style the park pages.
+//TODO style park pages, and add about page. Then add QOL like a swipeable sidebar and logos.
 export default function App() {
 
   //Load persisted config on app load

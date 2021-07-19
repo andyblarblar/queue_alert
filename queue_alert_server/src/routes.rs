@@ -14,6 +14,7 @@ use crate::routes::registration::Registration;
 pub type RWVec = RwLock<Vec<Registration>>;
 pub type QClient = queue_times::client::CachedClient<queue_times::client::Client>;
 
+//TODO add route to print current user stats
 /// Routes for registering users to push.
 pub mod registration {
     use super::*;
@@ -52,6 +53,7 @@ pub mod registration {
             },
             //Register in sorted order
             Err(idx) => {
+                log::info!("Registered new user");
                 //Add client to vec of clients to send push to
                 wrt_subs.insert(idx, subscription);
 

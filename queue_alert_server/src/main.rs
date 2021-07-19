@@ -52,7 +52,7 @@ async fn main() -> std::io::Result<()> {
     let timer_client = queue_client.clone();
     let timer_keys = keys.clone();
     let timer = timer::Timer::new();
-    let _timer_scope /*RAII type*/ = timer.schedule_repeating(chrono::Duration::seconds(30), move || {
+    let _timer_scope /*RAII type*/ = timer.schedule_repeating(chrono::Duration::seconds(30), move || {//TODO change time for real prod
         //Clone again to preserve FnMut
         let timer_subs2 = timer_subs.clone();
         let timer_client2 = timer_client.clone();
@@ -85,7 +85,7 @@ async fn main() -> std::io::Result<()> {
 
             let subs = timer_subs2.read().await;
 
-            log::debug!("pushing to {} clients", subs.len());
+            log::info!("pushing to {} clients", subs.len());
 
             //Push to all clients
             for sub in subs.iter() {
@@ -121,13 +121,13 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         //Enable cors only in prod
-        let cors =
-            if cfg!(feature = "prod")
-            { actix_cors::Cors::default() } else { actix_cors::Cors::permissive() };
+        let cors = actix_cors::Cors::permissive();//TODO cors breaks prod
+            //if cfg!(feature = "prod")
+            //{ actix_cors::Cors::default() } else { actix_cors::Cors::permissive() };
 
         App::new()
             .wrap(cors)
-            .wrap(Logger::new("%a %U %s"))
+            .wrap(Logger::new("%U %s"))
             .data(subs.clone())//Clients to push to
             .data(keys.clone())
             .data(queue_client.clone())

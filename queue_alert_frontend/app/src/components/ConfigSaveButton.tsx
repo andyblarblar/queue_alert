@@ -26,8 +26,13 @@ const ConfigSaveButton: React.FC<props> = ({ onSave }) => {//TODO style
         }
         //Sub if config is anything else
         else {
-            await client.subscribeUserToPush()
-            await client.registerWithBackend(config[0])
+            let res1 = await client.subscribeUserToPush()
+            let res2 = await client.registerWithBackend(config[0])
+
+            if (res1.err || res2.err) {
+                toast.error('Failed to save! Could not contact server.')
+                return
+            }
         }
 
         //Persist on SW
