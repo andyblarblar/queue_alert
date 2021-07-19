@@ -13,7 +13,7 @@ use std::sync::Arc;
 use std::io::Read;
 use openssl::bn::BigNumContext;
 use queue_times::client::QueueTimesClient;
-use web_push::{WebPushClient, WebPushMessageBuilder, VapidSignatureBuilder, ContentEncoding};
+use web_push::{WebPushClient, WebPushMessageBuilder, VapidSignatureBuilder, ContentEncoding, WebPushError};
 use iis::get_port;
 
 #[actix_web::main]
@@ -112,7 +112,14 @@ async fn main() -> std::io::Result<()> {
                 builder.set_vapid_signature(VapidSignatureBuilder::from_pem(timer_keys2.0.0.as_bytes(), &sub.sub).unwrap().build().unwrap());
                 builder.set_payload(ContentEncoding::AesGcm, content.as_bytes());
 
-                if let Err(why) = client.send(builder.build().unwrap()).await {
+                let message = builder.build();
+
+                //Message will fail if too large.
+                if let Err(why) = message {
+                    if why == WebPushError::PayloadTooLarge {
+                        log::error!("Payload for message was too large!");
+                    }
+                } else if let Err(why) = client.send(message.unwrap()).await {
                     log::error!("When sending webpush to client: {}", why);
                 }
             }
@@ -122,8 +129,8 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         //Enable cors only in prod
         let cors = actix_cors::Cors::permissive();//TODO cors breaks prod
-            //if cfg!(feature = "prod")
-            //{ actix_cors::Cors::default() } else { actix_cors::Cors::permissive() };
+        //if cfg!(feature = "prod")
+        //{ actix_cors::Cors::default() } else { actix_cors::Cors::permissive() };
 
         App::new()
             .wrap(cors)
