@@ -48,8 +48,16 @@ export default function App() {
       : <> </>
   }
 
+  //Get the right URL for the server
+  let qaUrl: string
+  if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+    qaUrl = "http://localhost:8080"
+  } else {
+    qaUrl = "https://qalert.ealovega.dev"
+  }
+
   return (
-    <QaClientProvider url="http://localhost:8080">
+    <QaClientProvider url={qaUrl}>
       <ConfigProvider oldConfig={initalConfig ?? undefined}>
 
         <div className="app-container">

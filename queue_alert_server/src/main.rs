@@ -14,11 +14,22 @@ use std::io::Read;
 use openssl::bn::BigNumContext;
 use queue_times::client::QueueTimesClient;
 use web_push::{WebPushClient, WebPushMessageBuilder, VapidSignatureBuilder, ContentEncoding};
+use iis::get_port;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let config = ConfigBuilder::default().add_filter_ignore_str("html5ever").add_filter_ignore_str("selectors::matching").build();
-    simplelog::SimpleLogger::init(LevelFilter::Debug, config).unwrap();
+    simplelog::SimpleLogger::init(if cfg!(feature = "prod") { LevelFilter::Info } else { LevelFilter::Debug }, config).unwrap();
+
+    //Get port for listening. IIS has its own port.
+    let port: String;
+    if cfg!(feature = "host_iis") {
+        port = get_port();
+        log::info!("Got port {} from IIS", port)
+    } else {
+        port = "8080".to_string();
+        log::info!("Not configured to use any server, defaulting to port: {}", port)
+    }
 
     //Load keys
     let keys = load_private_key();
@@ -26,7 +37,7 @@ async fn main() -> std::io::Result<()> {
         Ok(_) => {}
         Err(why) => {
             log::error!("Couldn't load private key. Make sure to have a PEM pk in the file: './private_key.pem'. Generate with: `openssl ecparam -genkey -name prime256v1 -out private_key.pem`");
-            return std::io::Result::Err(why)
+            return std::io::Result::Err(why);
         }
     }
     let keys = keys.unwrap();
@@ -57,7 +68,7 @@ async fn main() -> std::io::Result<()> {
                 let subs = timer_subs2.read().await;
 
                 if subs.is_empty() {
-                    return
+                    return;
                 }
             }
 
@@ -65,7 +76,7 @@ async fn main() -> std::io::Result<()> {
 
             if let Err(why) = &parks {
                 log::error!("While getting parks: {}",why);
-                return
+                return;
             }
             let parks = parks.unwrap();
 
@@ -81,14 +92,14 @@ async fn main() -> std::io::Result<()> {
                 let url = parks.get(&sub.park);
                 if url.is_none() {
                     log::error!("Submitted invalid park {}",sub.park);
-                    continue
+                    continue;
                 }
 
                 let rides = timer_client2.get_ride_times(url.unwrap().to_owned()).await;
 
                 if let Err(why) = rides {
                     log::error!("While getting rides: {}",why);
-                    continue
+                    continue;
                 }
 
                 let mut builder = WebPushMessageBuilder::new(&sub.sub).unwrap();
@@ -109,7 +120,10 @@ async fn main() -> std::io::Result<()> {
     });
 
     HttpServer::new(move || {
-        let cors = actix_cors::Cors::permissive();//TODO change for prod
+        //Enable cors only in prod
+        let cors =
+            if cfg!(feature = "prod")
+            { actix_cors::Cors::default() } else { actix_cors::Cors::permissive() };
 
         App::new()
             .wrap(cors)
@@ -123,9 +137,9 @@ async fn main() -> std::io::Result<()> {
             .service(routes::registration::unregister)
             .service(routes::queue::get_all_parks)
             .service(routes::queue::get_park_wait_times)
-            .service(Files::new("/","./www").index_file("index.html"))//Must be last, serves static site
+            .service(Files::new("/", "./www").index_file("index.html"))//Must be last, serves static site
     })
-        .bind(("0.0.0.0", 8080))?
+        .bind(format!("0.0.0.0:{}", port))?
         .run()
         .await
 }
@@ -135,7 +149,7 @@ async fn main() -> std::io::Result<()> {
 ///
 /// # Generation
 /// `openssl ecparam -genkey -name prime256v1 -out private_key.pem`
-fn load_private_key() -> std::io::Result<(models::PrivateKey,models::PublicKey)> {
+fn load_private_key() -> std::io::Result<(models::PrivateKey, models::PublicKey)> {
     let mut file = std::fs::File::open("./private_key.pem")?;
     let mut str = String::new();
 
@@ -148,7 +162,7 @@ fn load_private_key() -> std::io::Result<(models::PrivateKey,models::PublicKey)>
     let pub_k = pk.public_key();
 
     //Create combined key
-    let key = EcKey::from_private_components(&EcGroup::from_curve_name(openssl::nid::Nid::X9_62_PRIME256V1).unwrap(), pk.private_key(),pub_k ).unwrap();
+    let key = EcKey::from_private_components(&EcGroup::from_curve_name(openssl::nid::Nid::X9_62_PRIME256V1).unwrap(), pk.private_key(), pub_k).unwrap();
     //Base64 encode pub key
     let mut ctx = BigNumContext::new().unwrap();
     let keybytes = key.public_key()
@@ -158,5 +172,5 @@ fn load_private_key() -> std::io::Result<(models::PrivateKey,models::PublicKey)>
 
     log::info!("Using pub key: {}", final_pub);
 
-    Ok((models::PrivateKey(str),models::PublicKey(final_pub)))
+    Ok((models::PrivateKey(str), models::PublicKey(final_pub)))
 }

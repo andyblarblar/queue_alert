@@ -23,11 +23,15 @@ actix-rt = "2.2.0"
 actix-files = "0.6.0-beta.4"
 actix-http = "=3.0.0-beta.5"
 actix-service = "=2.0.0-beta.5"
-
 actix-cors = "0.6.0-beta.1"
 
 tokio = {version = "1", features = ["sync"]}
 openssl = "0.10.34"
+iis = "0.1.0"
 
 log = "0.4.14"
 simplelog = "0.10.0"
+
+[features]
+host_iis = ["prod"] #enables the server to be hosted on iis
+prod = [] #enabled when any hosting option is selected
