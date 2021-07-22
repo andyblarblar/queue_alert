@@ -29,8 +29,12 @@ const ConfigSaveButton: React.FC<props> = ({ onSave }) => {//TODO style
             let res1 = await client.subscribeUserToPush()
             let res2 = await client.registerWithBackend(config[0])
 
-            if (res1.err || res2.err) {
-                toast.error('Failed to save! Could not contact server.')
+            if (res1.err) {
+                toast.error('Failed to save! Please enable notifications for this site.')
+                return
+            }
+            if (res2.err) {
+                toast.error('Failed to save! Could not contact server. It may be down, or an internal error occurred.')
                 return
             }
         }
@@ -45,8 +49,8 @@ const ConfigSaveButton: React.FC<props> = ({ onSave }) => {//TODO style
             toast.error('Failed to save! ' + saveResult.val.message)
         }
 
-        if (onSave && saveResult.ok) { 
-            onSave(config) 
+        if (onSave && saveResult.ok) {
+            onSave(config)
         }
     }
 
