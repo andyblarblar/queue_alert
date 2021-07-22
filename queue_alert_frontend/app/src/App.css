@@ -13,8 +13,6 @@
 --background: #EDCFA9;
 --border: #855846a2;
 --dim-gray: #6e675fff;
-
-font-family: 'Raleway', sans-serif;
 }
 
 html {
@@ -162,3 +160,62 @@ html {
   margin-bottom: 5px;
 }
 
+.rides-container {
+  display: flex;
+  flex-wrap: wrap;
+
+}
+
+.rideconfig {
+  width: max-content;
+  flex-basis: auto;
+
+  margin-bottom: 20px;
+  margin-right: 30px;
+  margin-left: 10px;
+  padding: 15px;
+  padding-left: 10px;
+
+  background-color: var(--second-layer);
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  border-radius: 4px;
+
+}
+
+.rideconfig-ridename {
+  font-family: 'Raleway', sans-serif;
+  font-size: 25px;
+}
+
+.rideconfig-current-wait {
+  font-size: 18px;
+  width: fit-content;
+
+  opacity: 0.95;
+
+}
+
+.rideconfig-alert {
+  opacity: 0.85;
+}
+
+/*TODO make this align as right as we can*/
+.rideconfig-switch {
+  margin-left: 10px;
+}
+
+@media only screen and (max-width: 1200px){
+  .rideconfig-ridename {
+    font-weight: 600;
+    font-size: 20px;
+  }
+
+  .rideconfig-current-wait {
+    font-size: 15px;
+    opacity: 1;
+  }
+
+  .rideconfig-alert {
+    opacity: 0.9;
+  }
+}

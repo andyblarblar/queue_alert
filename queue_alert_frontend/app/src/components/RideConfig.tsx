@@ -101,13 +101,18 @@ const RideConfig: React.FC<props> = ({ rideInfo, currentAlert, onEnable, onDisab
 
     return (
         <div className="rideconfig">
-            <span>{rideInfo.name}</span>
-            <Switch checked={switchChecked} disabled={config == null} onChange={onSwitchEnable}></Switch> {/**Enable Switch when something is selected. Switch on actually sets the config.*/}
+            <span className="rideconfig-ridename">{rideInfo.name}</span>
+
+            <Switch className="rideconfig-switch" checked={switchChecked} disabled={config == null} onChange={onSwitchEnable}></Switch> {/**Enable Switch when something is selected. Switch on actually sets the config.*/}
+
 
             <br />
 
-            <span>Current wait: {typeof rideInfo.status === 'string' ? rideInfo.status : rideInfo.status.Wait} </span>
-            <span>Alert on: </span>
+            <div className="rideconfig-current-wait">
+                <span>Current wait: {typeof rideInfo.status === 'string' ? rideInfo.status : rideInfo.status.Wait} </span>
+            </div>
+
+            <span className="rideconfig-alert">Alert on: </span>
             {getSelect()}
 
             <br />

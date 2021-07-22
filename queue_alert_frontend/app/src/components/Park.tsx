@@ -67,8 +67,7 @@ function Park() {
 
         //Display save warning if not already visible and changes have been made.
         if (!_.isEqual(config[1], oldConfig.current[1]) && !toast.isActive(1234)) {
-            //const styles = isMobile ? { width: '50%', marginLeft: 'auto' } : {} //Prevent the size of banner from covering save btn on mobile
-            toast.warn('You have unsaved changes!', { closeButton: false, autoClose: false, toastId: 1234, draggable: false, closeOnClick: false, position: (isMobile ? 'bottom-right' : 'top-right')})
+            toast.warn('You have unsaved changes!', { closeButton: false, autoClose: false, toastId: 1234, draggable: false, closeOnClick: false, position: (isMobile ? 'bottom-right' : 'top-right') })
         }
         //Remove toast if changes are reverted.
         else if (_.isEqual(config[1], oldConfig.current[1]) && toast.isActive(1234)) {
@@ -140,14 +139,16 @@ function Park() {
             <h1>Ride times for {park}!</h1>
             <ConfigTable />
 
-            {rides.map(r => {
-                //Attempt to load already set config if it exists.
-                const oldRideConfig = config[1].find(r2 => r2.rideName === r.name)
+            <div className="rides-container">
+                {rides.map(r => {
+                    //Attempt to load already set config if it exists.
+                    const oldRideConfig = config[1].find(r2 => r2.rideName === r.name)
 
-                return (
-                    <RideConfig rideInfo={r} onEnable={onRideEnable} onDisable={onRideDisable} currentAlert={oldRideConfig == null ? undefined : oldRideConfig.alertOn} key={r.name}></RideConfig>
-                )
-            })}
+                    return (
+                        <RideConfig rideInfo={r} onEnable={onRideEnable} onDisable={onRideDisable} currentAlert={oldRideConfig == null ? undefined : oldRideConfig.alertOn} key={r.name}></RideConfig>
+                    )
+                })}
+            </div>
 
             <ConfigSaveButton onSave={onSave} />
         </div>
