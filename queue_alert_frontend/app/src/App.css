@@ -256,3 +256,62 @@ html {
     font-size: 1vw;  
   }
 }
+
+/*About page*/
+#FAQ {
+  font-family: 'Raleway', sans-serif;
+  font-size: 4rem;
+  font-weight: 600;
+
+  margin-left: 20px;
+  margin-bottom: 2rem;
+  margin-top: 1rem;
+
+  border-bottom: #522a0fd5 solid;
+  width: fit-content;
+  padding-right: 30px;
+}
+
+.Faq-question {
+  width: fit-content;
+
+  margin-bottom: 20px;
+  margin-right: 30px;
+  margin-left: 20px;
+  padding: 15px;
+  padding-left: 10px;
+
+  background-color: var(--second-layer);
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  border-radius: 4px;
+  border: var(--border) groove 1px;
+}
+
+.Faq-title {
+  font-family: 'Raleway', sans-serif;
+  font-size: 2rem;
+  font-weight: 600;
+
+  border-bottom: #522a0fd5 solid;
+  width: fit-content;
+  padding-right: 30px;
+  padding-bottom: 5px;
+  margin-bottom: .9rem;
+}
+
+.Faq-child {
+  font-size: 1.4rem;
+  font-weight: 400;
+  font-family: 'Raleway', sans-serif;
+
+  padding-right: .5rem;
+  padding-bottom: .4rem;
+}
+
+#about-welcome {
+  margin-top: 20px;
+}
+
+#FAQ-container {
+  margin-bottom: 2rem;
+}

@@ -16,7 +16,7 @@ import { clientsClaim } from 'workbox-core';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { StaleWhileRevalidate } from 'workbox-strategies';
+import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
 
 import { AlertConfig, alertConfigMessageType, swMessage } from "./api/alertConfig";
 import { Mutex } from "async-mutex";
@@ -76,6 +76,20 @@ registerRoute(
             new ExpirationPlugin({ maxEntries: 50 }),
         ],
     })
+);
+
+// Cache rides page
+registerRoute(
+    ({ url }) => url.pathname.startsWith('/allParks'),
+    // TODO may need to modify this
+    new CacheFirst()
+);
+
+// Cache about page
+registerRoute(
+    ({ url }) => url.pathname.startsWith('/about'),
+    // TODO may need to modify this
+    new CacheFirst()
 );
 
 // This allows the web app to trigger skipWaiting via
@@ -171,11 +185,13 @@ function handlePush(payload: rideTime[], event: PushEvent) {
                 }
             }
         }
-        if (!notified) {
-            await (self as any).registration.showNotification('queue alert', {
-                body: `No conditions met ¯\\_(ツ)_/¯`//This must be sent to fulfill push api as it must make a notification
-            })
-        }
+        /** It doesnt look like this is needed anymore, but can be readded if browsers need it.
+            if (!notified) {
+                await (self as any).registration.showNotification('queue alert', {
+                    body: `No conditions met ¯\\_(ツ)_/¯`//This must be sent to fulfill push api as it must make a notification
+                })
+            }
+        */
     });
 }
 
@@ -228,7 +244,6 @@ self.addEventListener('message', async (event) => {
     }
 })
 
-//TODO move to another file
 interface PushMessageData {
     arrayBuffer(): ArrayBuffer;
     blob(): Blob;

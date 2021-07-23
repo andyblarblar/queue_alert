@@ -23,6 +23,7 @@ import { useMediaQuery } from 'react-responsive'
 import Hamburger from './components/hamburger';
 import SideBar from './components/SideBar';
 import Headroom from 'react-headroom'
+import About from './components/About';
 
 //TODO style park pages, and add about page. Then add QOL like a swipeable sidebar and logos.
 export default function App() {
@@ -75,7 +76,10 @@ export default function App() {
                 <Route exact path="/">
                   <Home />
                 </Route>
-                {/** Put other set paths eg. about here*/}
+
+                <Route exact path="/about">
+                  <About />
+                </Route>
 
                 <Route path="/park/:park">
                   <Park />
