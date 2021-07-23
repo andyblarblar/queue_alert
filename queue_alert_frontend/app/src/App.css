@@ -101,7 +101,7 @@ html {
 
 .park-link:hover {
     opacity: 0.7;
-    transition: opacity 50ms;
+    transition: opacity 65ms;
 }
 
 .park-link > a {
@@ -129,6 +129,7 @@ html {
 .config-table {
   background-color: var(--second-layer);
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  border: var(--border) groove 1px;
   max-width: max-content;
 
   padding: 15px;
@@ -166,6 +167,7 @@ html {
 
 }
 
+/*This is the boxes on a park page*/
 .rideconfig {
   width: max-content;
   flex-basis: auto;
@@ -179,7 +181,7 @@ html {
   background-color: var(--second-layer);
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   border-radius: 4px;
-
+  border: var(--border) groove 1px;
 }
 
 .rideconfig-ridename {
@@ -191,12 +193,11 @@ html {
   font-size: 18px;
   width: fit-content;
 
-  opacity: 0.95;
-
+  font-weight: 400;
 }
 
 .rideconfig-alert {
-  opacity: 0.85;
+  font-weight: 200;
 }
 
 /*TODO make this align as right as we can*/
@@ -204,6 +205,7 @@ html {
   margin-left: 10px;
 }
 
+/*make text bigger on mobile*/
 @media only screen and (max-width: 1200px){
   .rideconfig-ridename {
     font-weight: 600;
@@ -212,10 +214,45 @@ html {
 
   .rideconfig-current-wait {
     font-size: 15px;
-    opacity: 1;
+    font-weight: 400;
   }
 
   .rideconfig-alert {
-    opacity: 0.9;
+    font-size: 15px;
+    font-weight: 200;
+  }
+}
+
+.save-btn {
+  padding: 2vw;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.save-btn > button {
+  background-color: #fc9a5d;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  border: var(--border) groove 5px;
+  max-width: max-content;
+  cursor: pointer;
+  padding: 8vw;
+
+  font-size: 6vw;  
+  font-family: 'Raleway', sans-serif;
+  font-weight: 600;
+}
+
+.save-btn > button:hover {
+  opacity: .8;
+  
+  transition: opacity 20ms;
+}
+
+/*make text bigger on mobile*/
+@media only screen and (min-width: 1200px){
+  .save-btn > button {
+    padding: 1vw;
+    font-size: 1vw;  
   }
 }

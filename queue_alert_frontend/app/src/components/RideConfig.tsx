@@ -103,7 +103,7 @@ const RideConfig: React.FC<props> = ({ rideInfo, currentAlert, onEnable, onDisab
         <div className="rideconfig">
             <span className="rideconfig-ridename">{rideInfo.name}</span>
 
-            <Switch className="rideconfig-switch" checked={switchChecked} disabled={config == null} onChange={onSwitchEnable}></Switch> {/**Enable Switch when something is selected. Switch on actually sets the config.*/}
+            <Switch className="rideconfig-switch" offColor="#855846" uncheckedIcon={false} checkedIcon={<span style={{ marginLeft: "5px", opacity: "0.9" }}>🎢</span>} checked={switchChecked} disabled={config == null} onChange={onSwitchEnable}></Switch> {/**Enable Switch when something is selected. Switch on actually sets the config.*/}
 
 
             <br />

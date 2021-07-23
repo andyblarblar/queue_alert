@@ -8,13 +8,13 @@ import { useQaClient } from "./qaUrlStore"
 import { toast } from 'react-toastify';
 
 
-type props = { onSave?: (conf: AlertConfig) => void }
+type props = { onSave?: (conf: AlertConfig) => void, visable: boolean }
 
 /**
  * A button that actually saves the config on the SW when clicked.
  * onSave prop is called when a config is successfully saved to the SW.
  */
-const ConfigSaveButton: React.FC<props> = ({ onSave }) => {//TODO style
+const ConfigSaveButton: React.FC<props> = ({ onSave, visable }) => {
     const [config, _] = useConfig()
     const { client } = useQaClient()
 
@@ -55,7 +55,7 @@ const ConfigSaveButton: React.FC<props> = ({ onSave }) => {//TODO style
     }
 
     return (
-        <div className="save-btn">
+        <div className="save-btn" style={{visibility: (visable ? 'visible' : 'hidden')}}>
             <button onClick={handleClick}>Save config</button>
         </div>
     )

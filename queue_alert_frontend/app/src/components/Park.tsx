@@ -61,6 +61,7 @@ function Park() {
         }
     })
 
+    const [saveBtnVisable, setSaveBtnVisable] = useState(false)
     //Manage toast state each update
     useEffect(() => {
         console.debug(`config is ${JSON.stringify(config[1])} oldconfig is ${JSON.stringify(oldConfig.current[1])}`)
@@ -68,10 +69,12 @@ function Park() {
         //Display save warning if not already visible and changes have been made.
         if (!_.isEqual(config[1], oldConfig.current[1]) && !toast.isActive(1234)) {
             toast.warn('You have unsaved changes!', { closeButton: false, autoClose: false, toastId: 1234, draggable: false, closeOnClick: false, position: (isMobile ? 'bottom-right' : 'top-right') })
+            setSaveBtnVisable(true)
         }
         //Remove toast if changes are reverted.
         else if (_.isEqual(config[1], oldConfig.current[1]) && toast.isActive(1234)) {
             toast.dismiss(1234)//TODO does this trigger a rerender? May be cause of double update. Not that thats an issue anymore.
+            setSaveBtnVisable(false)
         }
     }, [config, isMobile, oldConfig])
 
@@ -136,7 +139,7 @@ function Park() {
 
     return (
         <div>
-            <h1>Ride times for {park}!</h1>
+            <h1 id="parkprompt">Please configure your alerts for {park}:</h1>
             <ConfigTable />
 
             <div className="rides-container">
@@ -150,7 +153,7 @@ function Park() {
                 })}
             </div>
 
-            <ConfigSaveButton onSave={onSave} />
+            <ConfigSaveButton onSave={onSave} visable={saveBtnVisable}/>
         </div>
     )
 }
