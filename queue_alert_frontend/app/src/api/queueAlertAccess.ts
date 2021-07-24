@@ -6,8 +6,7 @@
  * @file contains methods for accessing the queue alert api.
  */
 
-
-import {Err, Ok, Result} from "ts-results";
+import { Err, Ok, Result } from "ts-results";
 
 /**
  * Map of park name to its ride page url.
@@ -73,7 +72,7 @@ export default class QueueAlertAccess {
     async getParkRideTimes(url: URL): Promise<Result<rideTime[], number>> {
 
         let req = '/parkWaitTimes?'
-        req += new URLSearchParams({"url": url.toString()}).toString()
+        req += new URLSearchParams({ "url": url.toString() }).toString()
 
         let res = await fetch(this.url + req.toString())
 
@@ -147,7 +146,7 @@ export default class QueueAlertAccess {
             return Ok(null)
         }
 
-        const body = JSON.stringify({sub: this.sub, park: park});
+        const body = JSON.stringify({ sub: this.sub, park: park });
         console.debug(`attempting to register with: ${JSON.stringify(body)}`)
 
         try {

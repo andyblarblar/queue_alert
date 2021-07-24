@@ -1,10 +1,10 @@
-
-
 /*
  * Copyright (c) 2021. Andrew Ealovega
  */
 
 type props = { title: string }
+
+/**An FAQ block.*/
 const Faq: React.FC<props> = ({ title, children }) => {
     return (
         <div className="Faq-question">

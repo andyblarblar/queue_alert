@@ -24,6 +24,9 @@ type props = {
     onDisable: (rideName: string) => void
 }
 
+/**
+ * Component that contains the controls for configuring a ride.
+ */
 const RideConfig: React.FC<props> = ({ rideInfo, currentAlert, onEnable, onDisable }) => {
     const [config, setConfig] = useStateCallback<currentAlertOn | undefined>(currentAlert)
     const [switchChecked, setSwitchChecked] = useStateCallback(config != null)

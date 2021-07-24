@@ -2,6 +2,10 @@
  * Copyright (c) 2021. Andrew Ealovega
  */
 
+/**
+ * @file About page.
+ */
+
 import Faq from "./Faq";
 
 function About() {
@@ -15,7 +19,6 @@ function About() {
                     for SteVe to open.
                 </Faq>
             </div>
-
 
             <div id="FAQ">FAQ</div>
 
@@ -35,11 +38,6 @@ function About() {
                 To stop getting notifications, head to the park page you've subscribed to and flick all switches
                 off. Now just save the config, and notifications will stop.
             </Faq>
-
-            {/*<Faq title="Why do I keep getting 'no conditions met' notifications?"> TODO check if you can avoid this on all browsers, then remove this FAQ.
-                Unfortunately, the web push API demands that I send a notification with each server update,
-                even if nothing has changed. Hence, I send this notification instead.
-               </Faq>*/}
 
             <Faq title="Where do you get the ride times from?">
                 I currently use the excellent <a href="https://queue-times.com">Queue times</a> website to get

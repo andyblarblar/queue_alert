@@ -85,13 +85,6 @@ registerRoute(
     new CacheFirst()
 );
 
-// Cache about page
-registerRoute(
-    ({ url }) => url.pathname.startsWith('/about'),
-    // TODO may need to modify this
-    new CacheFirst()
-);
-
 // This allows the web app to trigger skipWaiting via
 // registration.waiting.postMessage({type: 'SKIP_WAITING'})
 self.addEventListener('message', (event) => {

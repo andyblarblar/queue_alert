@@ -25,7 +25,6 @@ import SideBar from './components/SideBar';
 import Headroom from 'react-headroom'
 import About from './components/About';
 
-//TODO style park pages, and add about page. Then add QOL like a swipeable sidebar and logos.
 export default function App() {
 
   //Load persisted config on app load

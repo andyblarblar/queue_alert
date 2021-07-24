@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { parkMap } from "../api/queueAlertAccess"
 import ConfigTable from "./configTable"
+import ServerError from "./Error"
 import { useQaClient } from "./qaUrlStore"
 
 function Home() {
@@ -37,11 +38,9 @@ function Home() {
             </div>
         )
     }
-    else if (error) {//TODO make error component for use in connection errors
+    else if (error) {
         return (
-            <div>
-                <p style={{ color: 'red' }}>Could not hit backend!</p>
-            </div>
+            <ServerError />
         )
     }
     else {

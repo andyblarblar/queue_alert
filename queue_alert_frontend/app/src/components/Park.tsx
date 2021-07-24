@@ -18,6 +18,7 @@ import { useQaClient } from "./qaUrlStore"
 import RideConfig from "./RideConfig"
 import _ from "lodash"
 import { useMediaQuery } from "react-responsive"
+import ServerError from "./Error"
 
 /**
  * Config page for a park.
@@ -133,7 +134,7 @@ function Park() {
 
     if (error) {
         return (
-            <p>Could not hit backend!</p>
+            <ServerError />
         )
     }
 
@@ -153,7 +154,7 @@ function Park() {
                 })}
             </div>
 
-            <ConfigSaveButton onSave={onSave} visable={saveBtnVisable}/>
+            <ConfigSaveButton onSave={onSave} visable={saveBtnVisable} />
         </div>
     )
 }

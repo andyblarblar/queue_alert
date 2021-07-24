@@ -87,6 +87,7 @@ html {
   transform: scale(1.5);
 }
 
+/***Home page links***/
 .park-link {
   background-color: var(--second-layer);
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
@@ -126,6 +127,7 @@ html {
   font-size: 30px;
 }
 
+/***Table that shows current config***/
 .config-table {
   background-color: var(--second-layer);
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
@@ -164,10 +166,9 @@ html {
 .rides-container {
   display: flex;
   flex-wrap: wrap;
-
 }
 
-/*This is the boxes on a park page*/
+/***Ride config box on park page***/
 .rideconfig {
   width: max-content;
   flex-basis: auto;
@@ -223,6 +224,7 @@ html {
   }
 }
 
+/***park page save btn***/
 .save-btn {
   padding: 2vw;
   width: fit-content;
@@ -257,7 +259,7 @@ html {
   }
 }
 
-/*About page*/
+/***About page***/
 #FAQ {
   font-family: 'Raleway', sans-serif;
   font-size: 4rem;
@@ -314,4 +316,19 @@ html {
 
 #FAQ-container {
   margin-bottom: 2rem;
+}
+
+.error-container {
+  width: fit-content;
+  justify-self: center;
+}
+
+.error-emote {
+  font-size: 15rem;
+  color: red;
+}
+
+.error-msg {
+  font-size: 1.5rem;
+  color: red;
 }
