@@ -259,6 +259,11 @@ html {
   }
 }
 
+.park-norides {
+  color: red;
+  font-size: 2rem;  
+}
+
 /***About page***/
 #FAQ {
   font-family: 'Raleway', sans-serif;

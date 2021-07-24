@@ -32,6 +32,7 @@ function Park() {
 
     const { client } = useQaClient()
     const [error, setError] = useState(false)
+    const [loaded, setLoaded] = useState(false)
 
     //Get all rides for park
     const [rides, setRides] = useState<rideTime[]>([])
@@ -40,8 +41,8 @@ function Park() {
             .then(res => {
                 if (res.ok) {
                     setRides(res.val)
-                }
-                else {
+                    setLoaded(true)
+                } else {
                     console.error(res.val)
                     setError(true)
                 }
@@ -69,7 +70,14 @@ function Park() {
 
         //Display save warning if not already visible and changes have been made.
         if (!_.isEqual(config[1], oldConfig.current[1]) && !toast.isActive(1234)) {
-            toast.warn('You have unsaved changes!', { closeButton: false, autoClose: false, toastId: 1234, draggable: false, closeOnClick: false, position: (isMobile ? 'bottom-right' : 'top-right') })
+            toast.warn('You have unsaved changes!', {
+                closeButton: false,
+                autoClose: false,
+                toastId: 1234,
+                draggable: false,
+                closeOnClick: false,
+                position: (isMobile ? 'bottom-right' : 'top-right')
+            })
             setSaveBtnVisable(true)
         }
         //Remove toast if changes are reverted.
@@ -138,20 +146,36 @@ function Park() {
         )
     }
 
+    function getRides() {
+        if (rides.length === 0 && loaded) {
+            return (<p className="park-norides">No rides to show :(</p>)
+        }
+        else if (!loaded) {
+            return (<> </>)//TODO add spinner here
+        }
+        else {
+            return rides.map(r => {
+                //Attempt to load already set config if it exists.
+                const oldRideConfig = config[1].find(r2 => r2.rideName === r.name)
+
+                return (
+                    <RideConfig rideInfo={r} onEnable={onRideEnable} onDisable={onRideDisable}
+                        currentAlert={oldRideConfig == null ? undefined : oldRideConfig.alertOn}
+                        key={r.name} />
+                )
+            });
+        }
+    }
+
     return (
         <div>
             <h1 id="parkprompt">Please configure your alerts for {park}:</h1>
             <ConfigTable />
 
             <div className="rides-container">
-                {rides.map(r => {
-                    //Attempt to load already set config if it exists.
-                    const oldRideConfig = config[1].find(r2 => r2.rideName === r.name)
-
-                    return (
-                        <RideConfig rideInfo={r} onEnable={onRideEnable} onDisable={onRideDisable} currentAlert={oldRideConfig == null ? undefined : oldRideConfig.alertOn} key={r.name}></RideConfig>
-                    )
-                })}
+                {
+                    getRides()
+                }
             </div>
 
             <ConfigSaveButton onSave={onSave} visable={saveBtnVisable} />
