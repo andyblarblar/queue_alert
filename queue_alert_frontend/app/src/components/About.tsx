@@ -16,7 +16,7 @@ function About() {
                     Queue Alert is a Progressive Web App (PWA) that will send notifications whenever an amusement ride reaches
                     a certain wait-time threshold. This app was inspired by a particularly windy trip to Cedar Point,
                     where I spent all day checking <a href="https://queue-times.com">Queue times</a> on my phone
-                    for SteVe to open.
+                    while waiting for SteVe to open.
                 </Faq>
             </div>
 
