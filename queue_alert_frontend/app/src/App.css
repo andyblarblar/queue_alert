@@ -26,6 +26,8 @@ html {
 .bar-container {
   position: fixed;
   height: 100%;
+  /*Allows for sidebar to be clicked while spinner is widescreen.*/
+  z-index: 3;
 }
 
 /*Causes the content of the site to respect the space taken up by the bar when present.*/
@@ -44,7 +46,7 @@ html {
 @media only screen and (max-width: 1200px){
   /*Allows bar to avoid clipping with switches*/
   .bar-container {
-    z-index: 2;
+    z-index: 3;
   }
 
   .Toastify__toast-container.Toastify__toast-container--bottom-right {
@@ -323,6 +325,7 @@ html {
   margin-bottom: 2rem;
 }
 
+/***Error page***/
 .error-container {
   width: fit-content;
   justify-self: center;
@@ -336,4 +339,44 @@ html {
 .error-msg {
   font-size: 1.5rem;
   color: red;
+}
+
+/***Spinner***/
+.spinner {
+  position: fixed;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  /*Above content but under header and sidebar*/
+  z-index: 1.5;
+  background: rgba(0, 0, 0, 0.397);
+  justify-content: center;
+  align-items: center;
+}
+
+/*Manages the size of the SVG*/
+.spinner-svg-container {
+  width: 12vw;
+  height: 12vw;
+}
+
+.spinner-svg-container > svg {
+  width: 100%;
+  height: 100%;
+
+  animation-name: ckw;
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes ckw {
+  0% {
+      transform: rotate(0deg);
+  }
+  100% {
+      transform: rotate(360deg);
+  }
 }

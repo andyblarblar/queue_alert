@@ -19,6 +19,7 @@ import RideConfig from "./RideConfig"
 import _ from "lodash"
 import { useMediaQuery } from "react-responsive"
 import ServerError from "./Error"
+import QASpinner from "./QASpinner"
 
 /**
  * Config page for a park.
@@ -151,7 +152,7 @@ function Park() {
             return (<p className="park-norides">No rides to show :(</p>)
         }
         else if (!loaded) {
-            return (<> </>)//TODO add spinner here
+            return (<QASpinner />)
         }
         else {
             return rides.map(r => {
