@@ -10,6 +10,7 @@ import { FaGithub, FaShareAlt } from 'react-icons/fa'
 import { Menu, MenuItem, ProSidebar, SidebarContent, SidebarFooter, SidebarHeader } from 'react-pro-sidebar'
 import { useMediaQuery } from 'react-responsive'
 import { Link } from 'react-router-dom'
+import { toast } from 'react-toastify'
 
 type props = {
     toggled: boolean,
@@ -66,6 +67,11 @@ function shareSiteIfPossible() {
     //Most browsers don't have the share api yet.
     if ("share" in navigator) {
         navigator.share({text: "Check out Queue Alert!", url: "https://qalert.ealovega.dev"}).then()
+    }
+    //Fallback to clipboard and prompt toast announcing such.
+    else if ("clipboard" in navigator) {
+        navigator.clipboard.writeText(`https://qalert.ealovega.dev`).then()
+        toast.success('Copied link to clipboard!')
     }
 }
 

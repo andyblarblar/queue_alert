@@ -24,6 +24,7 @@ import Hamburger from './components/hamburger';
 import SideBar from './components/SideBar';
 import Headroom from 'react-headroom'
 import About from './components/About';
+import SharedHome from './components/SharedHome';
 
 export default function App() {
 
@@ -84,13 +85,17 @@ export default function App() {
                 <Route exact path="/">
                   <Home />
                 </Route>
-
+                
                 <Route exact path="/about">
                   <About />
                 </Route>
 
                 <Route path="/park/:park">
                   <Park />
+                </Route>
+                
+                <Route path="/share">
+                  <SharedHome />
                 </Route>
 
               </Switch>

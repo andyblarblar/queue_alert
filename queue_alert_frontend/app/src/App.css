@@ -165,6 +165,17 @@ html {
   margin-bottom: 5px;
 }
 
+.config-share-btn {
+
+}
+
+.config-share-btn:hover {
+  opacity: 0.6;
+
+  transition: opacity 0.2s;
+  cursor: pointer;
+}
+
 .rides-container {
   display: flex;
   flex-wrap: wrap;

@@ -57,6 +57,7 @@ function reducer(state: AlertConfig, action: action) {
 
         //Used to load an old config from the SW 
         case 'loadConfig':
+            console.debug('loading old config')
             if (action.oldConfig == null) {
                 console.error('Submitted a new park to the config, but the park was null.')
                 return state
