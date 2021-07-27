@@ -48,13 +48,13 @@ function About() {
             </Faq>
 
             <Faq title="Is there any way to submit an issue?">
-                Sure, if you're technical enough. Queue Alerts is FOSS, hosted on <a href="https://github.com/andyblarblar/queue_alert">github.</a> If 
-                you want, you can leave an issue on the repo and I'll see if I can work on it. Please dont submit anything on this FAQ,
+                Sure, if you're technical enough. Queue Alerts is FOSS, hosted on <a href="https://github.com/andyblarblar/queue_alert">github</a>. If 
+                you want, you can leave an issue on the repo and I'll see if I can work on it. Please don't submit anything on this FAQ,
                 and provide your browser version for any issues. Thanks!
             </Faq>
 
             <Faq title="Can I configure multiple parks at once?">
-                Unfortunately, Queue Alert was not designed for multiple parks at once. While this Could
+                Unfortunately, Queue Alert was not designed for multiple parks at once. While this could
                 (and may) be added at a later time, I began to hit transfer size constraints when multiple parks
                 were used. Should the push notification be compressed, this would be possible, yet the server
                 refuses to send when this is applied {'>'}:[

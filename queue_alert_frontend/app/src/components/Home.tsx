@@ -32,14 +32,7 @@ function Home() {
     }, [client])
 
 
-    if (!error && parkmap.size === 0) {
-        return (
-            <div>
-                <QASpinner />
-            </div>
-        )
-    }
-    else if (error) {
+    if (error) {
         return (
             <ServerError />
         )

@@ -27,6 +27,15 @@ import About from './components/About';
 
 export default function App() {
 
+  //Update SW on app load if possible.
+  useEffect(() => {
+    navigator.serviceWorker.getRegistration('/').then(sw => {
+      if (sw) {
+        sw.update()//TODO test
+      }
+    })
+  }, [])
+
   //Load persisted config on app load
   const initalConfig = useSWConfig()
 
