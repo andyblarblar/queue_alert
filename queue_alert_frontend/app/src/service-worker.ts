@@ -125,6 +125,12 @@ loadConfig().then((conf) => config = conf)
 
 function handlePush(payload: rideTime[], event: PushEvent) {
 
+    //Use our own badges and tag each ride to avoid reporting the same ride more than once.
+    const notificationConfig = {
+        icon: "/icons/queueLogo@0,33x.png",
+        badge: "/icons/apple-icon-72x72.png",
+    }
+
     return configMutex.runExclusive(async () => {
         //Check times for all rides we're waiting on.
         for (const [, rideConfigs] of Object.entries(config ?? [])) {
@@ -142,27 +148,35 @@ function handlePush(payload: rideTime[], event: PushEvent) {
                         if (serverRide.status !== "Closed") {
                             //Output current wait if we can
                             if (typeof serverRide.status !== "string") {
-                                await (self as any).registration.showNotification('queue alert', {
+                                await (self as any).registration.showNotification('Ride Alert', {
                                     body: `${rideConfig.rideName} is Open with a wait of ${serverRide.status.Wait} minutes!`,
+                                    ...notificationConfig,
+                                    tag: `${rideConfig.rideName}`
                                 })
                             } else {
-                                await (self as any).registration.showNotification('queue alert', {
+                                await (self as any).registration.showNotification('Ride Alert', {
                                     body: `${rideConfig.rideName} is Open!`,
+                                    ...notificationConfig,
+                                    tag: `${rideConfig.rideName}`
                                 })
                             }
                         }
                         break;
                     case "Closed":
                         if (serverRide.status === "Closed") {
-                            await (self as any).registration.showNotification('queue alert', {
+                            await (self as any).registration.showNotification('Ride Alert', {
                                 body: `${rideConfig.rideName} is Closed!`,
+                                ...notificationConfig,
+                                tag: `${rideConfig.rideName}`
                             })
                         }
                         break;
                     default: //Configured for a time
                         if (typeof serverRide.status !== "string" && serverRide.status.Wait <= rideConfig.alertOn) {
-                            await (self as any).registration.showNotification('queue alert', {
+                            await (self as any).registration.showNotification('Ride Alert', {
                                 body: `${rideConfig.rideName}'s wait is ${serverRide.status.Wait} minutes!`,
+                                ...notificationConfig,
+                                tag: `${rideConfig.rideName}`
                             })
                         }
                         break;
@@ -220,6 +234,40 @@ self.addEventListener('message', async (event) => {
         })
     }
 })
+
+/**
+ * Open the app when a notification is clicked, and remove notification.
+ */
+self.addEventListener('notificationclick', async (event) => {
+    const clickedNotification = event.notification;
+    clickedNotification.close();
+
+    const urlToOpen = new URL('/', self.location.origin).href;
+
+    const promiseChain = self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true
+    }).then((windowClients) => {
+        let matchingClient = null;
+
+        for (let i = 0; i < windowClients.length; i++) {
+            const windowClient = windowClients[i];
+            if (windowClient.url === urlToOpen) {
+                matchingClient = windowClient;
+                break;
+            }
+        }
+
+        if (matchingClient) {
+            return matchingClient.focus();
+        } else {
+            return self.clients.openWindow(urlToOpen);
+        }
+    });
+
+    event.waitUntil(promiseChain);
+})
+
 
 interface PushMessageData {
     arrayBuffer(): ArrayBuffer;

@@ -33,7 +33,7 @@ export default function App() {
     navigator.serviceWorker.getRegistration('/').then(sw => {
       if (sw) {
         sw.update().then()
-        //Can also registration.waiting.postMessage({type: 'SKIP_WAITING'}) if the above doesn't work.
+        //Can also registration.waiting.postMessage({type: 'SKIP_WAITING'}) if the above doesn't work. (Although the above is working.)
       }
     })
   })
