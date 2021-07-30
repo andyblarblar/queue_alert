@@ -28,10 +28,14 @@ const SideBar: React.FC<props> = ({ toggled, onToggle, onItemClick }) => {
     const onTablet = useMediaQuery({ query: "(min-width: 460px) and (max-width: 1200px)" })
 
     return (
-        <ProSidebar breakPoint="xl" toggled={toggled} width={onTablet ? '25vw' : (onMobile ? '60vw' : '9vw')} onToggle={onToggle}>
+        <ProSidebar breakPoint="xl" toggled={toggled} width={onTablet ? '22.5vw' : (onMobile ? '60vw' : '9vw')} onToggle={onToggle}>
             <SidebarHeader>
                 <Menu iconShape="square">
-                    <MenuItem >icon for app here</MenuItem>
+                    <MenuItem >
+                        <Link to="/" onClick={onItemClick}>
+                            <img src="icons/apple-icon-60x60.png" alt="queue alert logo" />
+                        </Link>
+                    </MenuItem>
                 </Menu>
             </SidebarHeader>
 
@@ -66,7 +70,7 @@ const SideBar: React.FC<props> = ({ toggled, onToggle, onItemClick }) => {
 function shareSiteIfPossible() {
     //Most browsers don't have the share api yet.
     if ("share" in navigator) {
-        navigator.share({text: "Check out Queue Alert!", url: "https://qalert.ealovega.dev"}).then()
+        navigator.share({ text: "Check out Queue Alert!", url: "https://qalert.ealovega.dev" }).then()
     }
     //Fallback to clipboard and prompt toast announcing such.
     else if ("clipboard" in navigator) {

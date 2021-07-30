@@ -32,10 +32,11 @@ export default function App() {
   useEffect(() => {
     navigator.serviceWorker.getRegistration('/').then(sw => {
       if (sw) {
-        sw.update()//TODO test
+        sw.update().then()
+        //Can also registration.waiting.postMessage({type: 'SKIP_WAITING'}) if the above doesn't work.
       }
     })
-  }, [])
+  })
 
   //Load persisted config on app load
   const initalConfig = useSWConfig()

@@ -54,6 +54,7 @@ function SharedHome() {
         else {
             console.error('failed to read shared config')
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sharedConfig])
 
     return redirectOrNot(redirect.current)

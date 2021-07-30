@@ -7,7 +7,8 @@ import { FaBars } from 'react-icons/fa'
 
 type props = { onClick: React.MouseEventHandler<HTMLButtonElement> }
 
-const Hamburger: React.FC<props> = ({ onClick }) => {//TODO style and position correctly
+/**Hamburger menu button.*/
+const Hamburger: React.FC<props> = ({ onClick }) => {
     return (
         <div className="hamburger">
             <button onClick={onClick} aria-label="Menu open button">

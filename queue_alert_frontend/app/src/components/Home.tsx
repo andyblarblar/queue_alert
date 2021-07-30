@@ -2,6 +2,10 @@
  * Copyright (c) 2021. Andrew Ealovega
  */
 
+/**
+ * @file Home page of the app. Will cache parks on first ever render.
+ */
+
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { parkMap } from "../api/queueAlertAccess"

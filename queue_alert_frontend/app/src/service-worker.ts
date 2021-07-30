@@ -81,7 +81,7 @@ registerRoute(
 // Cache rides page
 registerRoute(
     ({ url }) => url.pathname.startsWith('/allParks'),
-    // TODO may need to modify this
+
     new CacheFirst()
 );
 
@@ -92,9 +92,6 @@ self.addEventListener('message', (event) => {
         self.skipWaiting();
     }
 });
-
-// Any other custom service worker logic can go here.
-
 
 /*
  * Copyright (c) 2021. Andrew Ealovega
@@ -127,8 +124,6 @@ let config: AlertConfig | null = null
 loadConfig().then((conf) => config = conf)
 
 function handlePush(payload: rideTime[], event: PushEvent) {
-    /**Used to ensure the user only gets default message if none was sent.*/
-    let notified = false
 
     return configMutex.runExclusive(async () => {
         //Check times for all rides we're waiting on.
@@ -150,12 +145,10 @@ function handlePush(payload: rideTime[], event: PushEvent) {
                                 await (self as any).registration.showNotification('queue alert', {
                                     body: `${rideConfig.rideName} is Open with a wait of ${serverRide.status.Wait} minutes!`,
                                 })
-                                notified = true
                             } else {
                                 await (self as any).registration.showNotification('queue alert', {
                                     body: `${rideConfig.rideName} is Open!`,
                                 })
-                                notified = true
                             }
                         }
                         break;
@@ -164,7 +157,6 @@ function handlePush(payload: rideTime[], event: PushEvent) {
                             await (self as any).registration.showNotification('queue alert', {
                                 body: `${rideConfig.rideName} is Closed!`,
                             })
-                            notified = true
                         }
                         break;
                     default: //Configured for a time
@@ -172,19 +164,11 @@ function handlePush(payload: rideTime[], event: PushEvent) {
                             await (self as any).registration.showNotification('queue alert', {
                                 body: `${rideConfig.rideName}'s wait is ${serverRide.status.Wait} minutes!`,
                             })
-                            notified = true
                         }
                         break;
                 }
             }
         }
-        /** It doesnt look like this is needed anymore, but can be readded if browsers need it.
-            if (!notified) {
-                await (self as any).registration.showNotification('queue alert', {
-                    body: `No conditions met ¯\\_(ツ)_/¯`//This must be sent to fulfill push api as it must make a notification
-                })
-            }
-        */
     });
 }
 
