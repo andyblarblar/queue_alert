@@ -142,6 +142,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::registration::vapid_public_key)
             .service(routes::registration::register)
             .service(routes::registration::unregister)
+            .service(routes::registration::get_current_user_count)
             .service(routes::queue::get_all_parks)
             .service(routes::queue::get_park_wait_times)
             .service(Files::new("/", "./www").index_file("index.html"))//Must be last, serves static site
