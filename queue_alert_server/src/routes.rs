@@ -14,10 +14,18 @@ use crate::routes::registration::Registration;
 pub type RWVec = RwLock<Vec<Registration>>;
 pub type QClient = queue_times::client::CachedClient<queue_times::client::Client>;
 
-//TODO add route to print current user stats
 /// Routes for registering users to push.
 pub mod registration {
     use super::*;
+
+    /// Returns the current number of subscribed users.
+    #[get("/userCount")]
+    pub async fn get_current_user_count(subs: web::Data<Arc<RWVec>>) -> impl Responder {
+        let subs = subs.into_inner();
+
+        let subs = subs.read().await;
+        subs.len().to_string()
+    }
 
     /// Returns the current VAPID public key.
     #[get("/vapidPublicKey")]

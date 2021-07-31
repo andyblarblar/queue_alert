@@ -32,8 +32,13 @@ export default function App() {
   useEffect(() => {
     navigator.serviceWorker.getRegistration('/').then(sw => {
       if (sw) {
+        //First check if new SW
         sw.update().then()
-        //Can also registration.waiting.postMessage({type: 'SKIP_WAITING'}) if the above doesn't work. (Although the above is working.)
+
+        //Then enable it
+        if (sw.waiting) {
+          sw.waiting.postMessage({ type: 'SKIP_WAITING' })
+        }
       }
     })
   })
@@ -86,7 +91,7 @@ export default function App() {
                 <Route exact path="/">
                   <Home />
                 </Route>
-                
+
                 <Route exact path="/about">
                   <About />
                 </Route>
@@ -94,7 +99,7 @@ export default function App() {
                 <Route path="/park/:park">
                   <Park />
                 </Route>
-                
+
                 <Route path="/share">
                   <SharedHome />
                 </Route>

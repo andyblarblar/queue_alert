@@ -134,7 +134,7 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .wrap(cors)
-            .wrap(Logger::new("%U %s"))
+            .wrap(Logger::new("%{r}a %U %s"))
             .data(subs.clone())//Clients to push to
             .data(keys.clone())
             .data(queue_client.clone())
