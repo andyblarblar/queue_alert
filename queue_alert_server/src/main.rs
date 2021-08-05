@@ -11,9 +11,8 @@ use simplelog::{LevelFilter, ConfigBuilder};
 use actix_web::middleware::Logger;
 use std::sync::Arc;
 use std::io::Read;
-use openssl::bn::BigNumContext;
 use queue_times::client::QueueTimesClient;
-use web_push::{WebPushClient, WebPushMessageBuilder, VapidSignatureBuilder, ContentEncoding, WebPushError};
+use web_push::{WebPushClient, WebPushMessageBuilder, VapidSignatureBuilder, ContentEncoding, WebPushError, PartialVapidSignatureBuilder};
 use iis::get_port;
 
 #[actix_web::main]
@@ -46,17 +45,21 @@ async fn main() -> std::io::Result<()> {
     let subs = Arc::new(routes::RWVec::new(Vec::new()));
     //Shared caching queue times client
     let queue_client = Arc::new(queue_times::client::CachedClient::default());
+    //Client for sending push notifications
+    let push_client = Arc::new(WebPushClient::new().unwrap());
 
     //Setup timer to send push notifications
     let timer_subs = subs.clone();
     let timer_client = queue_client.clone();
     let timer_keys = keys.clone();
+
     let timer = timer::Timer::new();
     let _timer_scope /*RAII type*/ = timer.schedule_repeating(chrono::Duration::seconds(30), move || {//TODO change time for real prod
         //Clone again to preserve FnMut
         let timer_subs2 = timer_subs.clone();
         let timer_client2 = timer_client.clone();
         let timer_keys2 = timer_keys.clone();
+        let timer_push = push_client.clone();
 
         let tok = tokio::runtime::Builder::new_current_thread()
             .enable_all()
@@ -79,9 +82,6 @@ async fn main() -> std::io::Result<()> {
                 return;
             }
             let parks = parks.unwrap();
-
-            //Send push message to registered clients
-            let client = WebPushClient::new();
 
             let subs = timer_subs2.read().await;
 
@@ -109,8 +109,8 @@ async fn main() -> std::io::Result<()> {
                 log::debug!("Content size: {} bytes", content.len());
 
                 //*Must* set vapid signature, else error
-                builder.set_vapid_signature(VapidSignatureBuilder::from_pem(timer_keys2.0.0.as_bytes(), &sub.sub).unwrap().build().unwrap());
-                builder.set_payload(ContentEncoding::AesGcm, content.as_bytes());
+                builder.set_vapid_signature(timer_keys2.2.clone().add_sub_info(&sub.sub).build().unwrap());
+                builder.set_payload(ContentEncoding::Aes128Gcm, content.as_bytes());
 
                 let message = builder.build();
 
@@ -119,7 +119,7 @@ async fn main() -> std::io::Result<()> {
                     if why == WebPushError::PayloadTooLarge {
                         log::error!("Payload for message was too large!");
                     }
-                } else if let Err(why) = client.send(message.unwrap()).await {
+                } else if let Err(why) = timer_push.send(message.unwrap()).await {
                     log::error!("When sending webpush to client: {}", why);
                 }
             }
@@ -136,7 +136,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .wrap(Logger::new("%{r}a %U %s"))
             .data(subs.clone())//Clients to push to
-            .data(keys.clone())
+            .data((keys.0.clone(), keys.1.clone()))
             .data(queue_client.clone())
             //Begin endpoints
             .service(routes::registration::vapid_public_key)
@@ -153,32 +153,23 @@ async fn main() -> std::io::Result<()> {
 }
 
 /// Loads a PEM private key from a local file './private_key.pem', and generates a public key
-/// from it.
+/// from it. Both keys are base64URL encoded. A partial VAPID object is also returned.
 ///
 /// # Generation
 /// `openssl ecparam -genkey -name prime256v1 -out private_key.pem`
-fn load_private_key() -> std::io::Result<(models::PrivateKey, models::PublicKey)> {
+fn load_private_key() -> std::io::Result<(models::PrivateKey, models::PublicKey, PartialVapidSignatureBuilder)> {
     let mut file = std::fs::File::open("./private_key.pem")?;
     let mut str = String::new();
 
     file.read_to_string(&mut str)?;
 
-    use openssl::ec::*;
+    let sig = VapidSignatureBuilder::from_pem_no_sub(str.as_bytes()).unwrap();
 
-    //Load private
-    let pk = EcKey::private_key_from_pem(str.as_bytes()).unwrap();
-    let pub_k = pk.public_key();
+    let key_bytes = sig.get_public_key();
 
-    //Create combined key
-    let key = EcKey::from_private_components(&EcGroup::from_curve_name(openssl::nid::Nid::X9_62_PRIME256V1).unwrap(), pk.private_key(), pub_k).unwrap();
-    //Base64 encode pub key
-    let mut ctx = BigNumContext::new().unwrap();
-    let keybytes = key.public_key()
-        .to_bytes(&EcGroup::from_curve_name(openssl::nid::Nid::X9_62_PRIME256V1).unwrap(), PointConversionForm::UNCOMPRESSED, &mut ctx)
-        .unwrap();
-    let final_pub = base64::encode_config(&keybytes, base64::URL_SAFE_NO_PAD);
+    let final_pub = base64::encode_config(&key_bytes, base64::URL_SAFE_NO_PAD);
 
     log::info!("Using pub key: {}", final_pub);
 
-    Ok((models::PrivateKey(str), models::PublicKey(final_pub)))
+    Ok((models::PrivateKey(str), models::PublicKey(final_pub), sig))
 }

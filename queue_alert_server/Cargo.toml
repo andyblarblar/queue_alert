@@ -7,12 +7,12 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-web-push = {path = "../../rust-web-push"} #TODO perhaps make this published if the main fork doesnt update
-queue_times = {version = "0.0.4", features = ["client"]}
+web-push = { path = "../../rust-web-push", features = ["hyper-client"], default-features = false } #TODO perhaps make this published if the main fork doesnt update
+queue_times = { version = "0.0.4", features = ["client"] }
 base64 = "0.13.0"
 dashmap = "4.0.2"
 url = "2.2.2"
-serde = {version = "1.0.126", features = ["derive"]}
+serde = { version = "1.0.126", features = ["derive"] }
 serde_json = "1.0.64"
 timer = "0.2.0"
 chrono = "0.4.19"
@@ -25,8 +25,7 @@ actix-http = "=3.0.0-beta.5"
 actix-service = "=2.0.0-beta.5"
 actix-cors = "0.6.0-beta.1"
 
-tokio = {version = "1", features = ["sync"]}
-openssl = "0.10.34"
+tokio = { version = "1", features = ["sync"] }
 iis = "0.1.0"
 
 log = "0.4.14"

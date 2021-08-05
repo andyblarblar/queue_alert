@@ -42,7 +42,7 @@ pub mod registration {
         /// Push API endpoint info.
         pub sub: SubscriptionInfo,
         /// The park the user is listening to.
-        pub park: String
+        pub park: String,
     }
 
     /// Adds the subscription to the vec of clients to push. Does not duplicate registrations if already set.
@@ -58,7 +58,7 @@ pub mod registration {
             //Already registered
             Ok(_) => {
                 Ok(HttpResponse::Ok())
-            },
+            }
             //Register in sorted order
             Err(idx) => {
                 log::info!("Registered new user");
@@ -84,7 +84,7 @@ pub mod registration {
             Ok(idx) => {
                 wrt_subs.remove(idx);
                 HttpResponse::Ok().finish()
-            },
+            }
             //sub isnt registered
             Err(_) => {
                 HttpResponse::BadRequest().body("Subscription was not registered with queue alert")
@@ -107,11 +107,11 @@ pub mod queue {
         match res {
             Ok(mut map) => {
                 //Sort map by name
-                let map = map.drain().map(|(n,u)| (n,u.to_string())).collect::<BTreeMap<String,String>>();
+                let map = map.drain().map(|(n, u)| (n, u.to_string())).collect::<BTreeMap<String, String>>();
                 Ok(HttpResponse::Ok().json(map))
             }
             Err(err) => {
-                return Ok(HttpResponse::InternalServerError().body(format!("{}",err)))
+                return Ok(HttpResponse::InternalServerError().body(format!("{}", err)));
             }
         }
     }
@@ -119,7 +119,7 @@ pub mod queue {
     /// Used for extracting `...?url=...` queries.
     #[derive(serde::Deserialize)]
     pub struct UrlQuery {
-        pub url: String
+        pub url: String,
     }
 
     ///Responds with a sorted JSON list of ride wait times for the park at the passed url. The url is validated before being accepted.
@@ -139,17 +139,17 @@ pub mod queue {
                 //Validate url is to queue_times, else consumers could have us download anything :/
                 match url.domain() {
                     None => {
-                        return HttpResponse::BadRequest().body("Non queue-times url passed.")
+                        return HttpResponse::BadRequest().body("Non queue-times url passed.");
                     }
                     Some(domain) => {
                         if domain != "queue-times.com" {
-                            return HttpResponse::BadRequest().body("Non queue-times url passed.")
+                            return HttpResponse::BadRequest().body("Non queue-times url passed.");
                         }
                     }
                 }
             }
             Err(_) => {
-                return HttpResponse::BadRequest().body("Bad Url passed.")
+                return HttpResponse::BadRequest().body("Bad Url passed.");
             }
         }
         let url = url.unwrap();
@@ -162,7 +162,7 @@ pub mod queue {
                 HttpResponse::Ok().json(times)
             }
             Err(err) => {
-                return HttpResponse::InternalServerError().body(format!("{}",err))
+                return HttpResponse::InternalServerError().body(format!("{}", err));
             }
         }
     }
