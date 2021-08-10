@@ -172,6 +172,20 @@ html {
   cursor: pointer;
 }
 
+.table-delete-icon {
+  color: rgb(151, 25, 25);
+
+  margin-left: 15px;
+
+  cursor: pointer;
+}
+
+.table-delete-icon:hover {
+  opacity: 0.6;
+
+  transition: opacity 50ms;
+}
+
 .rides-container {
   display: flex;
   flex-wrap: wrap;

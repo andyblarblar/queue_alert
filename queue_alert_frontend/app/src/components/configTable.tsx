@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useRef } from "react"
-import { FaShareAlt } from "react-icons/fa"
+import { FaShareAlt, FaTrash } from "react-icons/fa"
 import { toast } from "react-toastify"
 import { AlertConfig, rideConfig } from "../api/alertConfig"
 import { useConfig } from "./ConfigStore"
@@ -68,7 +68,7 @@ const ConfigTable: React.FC<props> = ({ onSave }) => {
                     <td>{r.rideName}</td>
                     <td>{getProperAlertOnString(r)}</td>
                     <td>
-                        <button onClick={onDeleteClick}>Delete</button>
+                        <FaTrash onClick={onDeleteClick} className="table-delete-icon" size='20'></FaTrash>
                     </td>
                 </tr>
             )
