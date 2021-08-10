@@ -63,6 +63,22 @@ export default class QueueAlertAccess {
             return Err(res.status)
         }
     }
+    
+    /**
+     * Attempts to get the current number of connected users.
+     *
+     * @return number if Ok, status code if Err.
+     */
+    async getUserCount(): Promise<Result<number, number>> {
+        let res = await fetch(this.url + '/userCount')
+
+        if (res.ok) {
+            let json = (await res.json()) as number
+            return Ok(json)
+        } else {
+            return Err(res.status)
+        }
+    }
 
     /**
      * Attempts to get a list of ride times for a park url.

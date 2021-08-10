@@ -6,19 +6,32 @@
  * @file About page.
  */
 
+import { useEffect, useState } from "react";
 import Faq from "./Faq";
+import { useQaClient } from "./qaUrlStore";
 
 function About() {
+    const [userCount, setUserCount] = useState(0)
+    const { client } = useQaClient()
+
+    useEffect(() => {
+        client.getUserCount().then(users => {
+            if (users.ok) {
+                setUserCount(users.val)
+            }
+        })
+    }, [])
+
     return (
         <div id="FAQ-container">
             <div id="about-welcome">
-                <Faq title="Welcome to Queue Alert!">
+                <Faq title={`Welcome to Queue Alert, currently serving ${userCount} users!`}>
                     Queue Alert is a Progressive Web App (PWA) that will send notifications whenever an amusement ride reaches
                     a certain wait-time threshold. This app was inspired by a particularly windy trip to Cedar Point,
                     where I spent all day checking <a href="https://queue-times.com">Queue times</a> on my phone
-                    while waiting for SteVe to open. Queue Alert aims to be a mobile first, streamlined, and ergonomic 
-                    solution to automate checking wait times such that you can spend less time checking your phone, and more time 
-                    enjoying your visit. 
+                    while waiting for SteVe to open. Queue Alert aims to be a mobile first, streamlined, and ergonomic
+                    solution to automate checking wait times such that you can spend less time checking your phone, and more time
+                    enjoying your visit.
                 </Faq>
             </div>
 
@@ -48,7 +61,7 @@ function About() {
             </Faq>
 
             <Faq title="Is there any way to submit an issue?">
-                Sure, if you're technical enough. Queue Alerts is FOSS, hosted on <a href="https://github.com/andyblarblar/queue_alert">github</a>. If 
+                Sure, if you're technical enough. Queue Alerts is FOSS, hosted on <a href="https://github.com/andyblarblar/queue_alert">github</a>. If
                 you want, you can leave an issue on the repo and I'll see if I can work on it. Please don't submit anything on this FAQ,
                 and provide your browser version for any issues. Thanks!
             </Faq>
