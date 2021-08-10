@@ -6,6 +6,7 @@ import { AlertConfig, sendConfigToSW } from "../api/alertConfig"
 import { useConfig } from "./ConfigStore"
 import { useQaClient } from "./qaUrlStore"
 import { toast } from 'react-toastify';
+import UseConfigSave from "./UseConfigSave";
 
 
 type props = { onSave?: (conf: AlertConfig) => void, visable: boolean }
@@ -15,48 +16,11 @@ type props = { onSave?: (conf: AlertConfig) => void, visable: boolean }
  * onSave prop is called when a config is successfully saved to the SW.
  */
 const ConfigSaveButton: React.FC<props> = ({ onSave, visable }) => {
-    const [config, _] = useConfig()
-    const { client } = useQaClient()
-
-    const handleClick = async () => {
-        //Unsub user from services if config is empty.
-        if (config[1].length === 0) {
-            await client.unregisterWithBackend()//Ignore failures
-            await client.unsubscribeUserFromPush()
-        }
-        //Sub if config is anything else
-        else {
-            let res1 = await client.subscribeUserToPush()
-            let res2 = await client.registerWithBackend(config[0])
-
-            if (res1.err) {
-                toast.error('Failed to save! Please enable notifications for this site.')
-                return
-            }
-            if (res2.err) {
-                toast.error('Failed to save! Could not contact server. It may be down, or an internal error occurred.')
-                return
-            }
-        }
-
-        //Persist on SW
-        const saveResult = await sendConfigToSW(config)
-
-        if (saveResult.ok) {
-            toast.success('Config saved!')
-        }
-        else {
-            toast.error('Failed to save! ' + saveResult.val.message)
-        }
-
-        if (onSave && saveResult.ok) {
-            onSave(config)
-        }
-    }
+    const save = UseConfigSave(onSave)
 
     return (
         <div className="save-btn" style={{visibility: (visable ? 'visible' : 'hidden')}}>
-            <button onClick={handleClick}>Save config</button>
+            <button onClick={save}>Save config</button>
         </div>
     )
 }

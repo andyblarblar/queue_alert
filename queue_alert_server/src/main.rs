@@ -32,12 +32,9 @@ async fn main() -> std::io::Result<()> {
 
     //Load keys
     let keys = load_private_key();
-    match keys {
-        Ok(_) => {}
-        Err(why) => {
-            log::error!("Couldn't load private key. Make sure to have a PEM pk in the file: './private_key.pem'. Generate with: `openssl ecparam -genkey -name prime256v1 -out private_key.pem`");
-            return std::io::Result::Err(why);
-        }
+    if let Err(why) = keys {
+        log::error!("Couldn't load private key. Make sure to have a PEM pk in the file: './private_key.pem'. Generate with: `openssl ecparam -genkey -name prime256v1 -out private_key.pem`");
+        return std::io::Result::Err(why);
     }
     let keys = keys.unwrap();
 
@@ -104,7 +101,7 @@ async fn main() -> std::io::Result<()> {
 
                 let mut builder = WebPushMessageBuilder::new(&sub.sub).unwrap();
 
-                let content = serde_json::to_string(&rides.unwrap()).unwrap(); //It seems web push needs utf-8 bytes, so json it is. Cant even compress :/
+                let content = serde_json::to_string(&rides.unwrap()).unwrap(); //It seems web push needs utf-8 bytes, so json it is. Cant even compress :/ TODO try compression now that we control web-push
 
                 log::debug!("Content size: {} bytes", content.len());
 

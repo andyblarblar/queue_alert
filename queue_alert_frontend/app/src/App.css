@@ -362,10 +362,6 @@ html {
   align-items: center;
 }
 
-/*Manages the size of the SVG*/
-.spinner-svg-container {
-}
-
 .spinner-svg-container > img {
   animation-name: ckw;
   animation-duration: 1s;

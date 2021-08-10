@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
+import { toast } from "react-toastify"
 import { parkMap } from "../api/queueAlertAccess"
 import ConfigTable from "./configTable"
 import ServerError from "./Error"
@@ -43,7 +44,7 @@ function Home() {
     else {
         return (
             <div>
-                <ConfigTable />
+                <ConfigTable onSave={() => { toast.dismiss(1234) }} />
 
                 <p id="parkprompt">Please select a park:</p>
                 <div className="parks-container">

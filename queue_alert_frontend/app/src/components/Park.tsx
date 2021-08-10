@@ -54,16 +54,6 @@ function Park() {
     const [config, dispatch] = useConfig()
     const oldConfig = useRef(_.cloneDeep(config)) //Clone old config for diffing
 
-    useEffect(() => {
-        //Reset the config to null if nothing is selected. This prevents the empty table glitch.
-        if (config[1].length === 0 && config[0] !== 'none') {
-            console.debug('reseting config ')
-            dispatch({
-                type: "reset"
-            })
-        }
-    })
-
     const [saveBtnVisable, setSaveBtnVisable] = useState(false)
     //Manage toast state each update
     useEffect(() => {
@@ -156,13 +146,10 @@ function Park() {
         }
         else {
             return rides.map(r => {
-                //Attempt to load already set config if it exists.
-                const oldRideConfig = config[1].find(r2 => r2.rideName === r.name)
+
 
                 return (
-                    <RideConfig rideInfo={r} onEnable={onRideEnable} onDisable={onRideDisable}
-                        currentAlert={oldRideConfig == null ? undefined : oldRideConfig.alertOn}
-                        key={r.name} />
+                    <RideConfig rideInfo={r} onEnable={onRideEnable} onDisable={onRideDisable} key={r.name} />
                 )
             });
         }
@@ -171,7 +158,7 @@ function Park() {
     return (
         <div>
             <h1 id="parkprompt">Please configure your alerts for {park}:</h1>
-            <ConfigTable />
+            <ConfigTable onSave={onSave} />
 
             <div className="rides-container">
                 {
