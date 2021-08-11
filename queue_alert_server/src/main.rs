@@ -14,6 +14,7 @@ use std::io::Read;
 use queue_times::client::QueueTimesClient;
 use web_push::{WebPushClient, WebPushMessageBuilder, VapidSignatureBuilder, ContentEncoding, WebPushError, PartialVapidSignatureBuilder};
 use iis::get_port;
+use actix_web::web::Data;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -101,7 +102,7 @@ async fn main() -> std::io::Result<()> {
 
                 let mut builder = WebPushMessageBuilder::new(&sub.sub).unwrap();
 
-                let content = serde_json::to_string(&rides.unwrap()).unwrap(); //It seems web push needs utf-8 bytes, so json it is. Cant even compress :/ TODO try compression now that we control web-push
+                let content = serde_json::to_string(&rides.unwrap()).unwrap(); //It seems web push needs utf-8 bytes, so json it is. Cant even compress :/
 
                 log::debug!("Content size: {} bytes", content.len());
 
@@ -132,9 +133,9 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .wrap(Logger::new("%{r}a %U %s"))
-            .data(subs.clone())//Clients to push to
-            .data((keys.0.clone(), keys.1.clone()))
-            .data(queue_client.clone())
+            .app_data(Data::new(subs.clone()))//Clients to push to
+            .app_data(Data::new((keys.0.clone(), keys.1.clone())))
+            .app_data(Data::new(queue_client.clone()))
             //Begin endpoints
             .service(routes::registration::vapid_public_key)
             .service(routes::registration::register)
