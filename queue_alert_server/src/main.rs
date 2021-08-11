@@ -52,7 +52,7 @@ async fn main() -> std::io::Result<()> {
     let timer_keys = keys.clone();
 
     let timer = timer::Timer::new();
-    let _timer_scope /*RAII type*/ = timer.schedule_repeating(chrono::Duration::seconds(30), move || {//TODO change time for real prod
+    let _timer_scope /*RAII type*/ = timer.schedule_repeating(chrono::Duration::seconds(120), move || {
         //Clone again to preserve FnMut
         let timer_subs2 = timer_subs.clone();
         let timer_client2 = timer_client.clone();
@@ -102,7 +102,7 @@ async fn main() -> std::io::Result<()> {
 
                 let mut builder = WebPushMessageBuilder::new(&sub.sub).unwrap();
 
-                let content = serde_json::to_string(&rides.unwrap()).unwrap(); //It seems web push needs utf-8 bytes, so json it is. Cant even compress :/
+                let content = serde_json::to_string(&rides.unwrap()).unwrap();
 
                 log::debug!("Content size: {} bytes", content.len());
 
