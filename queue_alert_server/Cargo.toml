@@ -4,10 +4,8 @@ version = "0.1.0"
 authors = ["Andy Ealovega <andrew@ealovega.dev>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-web-push = { path = "../../rust-web-push", features = ["hyper-client"], default-features = false } #TODO perhaps make this published if the main fork doesnt update
+web-push = { version = "^0.8.0", features = ["hyper-client"], default-features = false }
 queue_times = { version = "0.0.4", features = ["client"] }
 base64 = "0.13.0"
 dashmap = "4.0.2"
