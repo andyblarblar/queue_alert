@@ -12,16 +12,18 @@
 // You can also remove this file if you'd prefer not to use a
 // service worker, and the Workbox build step will be skipped.
 
-import { clientsClaim } from 'workbox-core';
-import { ExpirationPlugin } from 'workbox-expiration';
-import { precacheAndRoute, createHandlerBoundToURL } from 'workbox-precaching';
-import { registerRoute } from 'workbox-routing';
-import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
+import {clientsClaim} from 'workbox-core';
+import {ExpirationPlugin} from 'workbox-expiration';
+import {createHandlerBoundToURL, precacheAndRoute} from 'workbox-precaching';
+import {registerRoute} from 'workbox-routing';
+import {CacheFirst, StaleWhileRevalidate} from 'workbox-strategies';
 
-import { AlertConfig, alertConfigMessageType, swMessage } from "./api/alertConfig";
-import { Mutex } from "async-mutex";
-import { rideTime } from "./api/queueAlertAccess";
+import {AlertConfig, alertConfigMessageType, swMessage} from "./api/alertConfig";
+import {Mutex} from "async-mutex";
+import {rideTime} from "./api/queueAlertAccess";
 import * as localforage from 'localforage'
+import {toByteArray} from 'base64-js'
+import {decompressSync, strFromU8} from "fflate";
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -39,7 +41,7 @@ precacheAndRoute(self.__WB_MANIFEST);
 const fileExtensionRegexp = new RegExp('/[^/?]+\\.[^/]+$');
 registerRoute(
     // Return false to exempt requests from being fulfilled by index.html.
-    ({ request, url }: { request: Request; url: URL }) => {
+    ({request, url}: { request: Request; url: URL }) => {
         // If this isn't a navigation, skip.
         if (request.mode !== 'navigate') {
             return false;
@@ -66,21 +68,21 @@ registerRoute(
 // precache, in this case same-origin .png requests like those from in public/
 registerRoute(
     // Add in any other file extensions or routing criteria as needed.
-    ({ url }) => url.origin === self.location.origin && url.pathname.endsWith('.png'),
+    ({url}) => url.origin === self.location.origin && url.pathname.endsWith('.png'),
     // Customize this strategy as needed, e.g., by changing to CacheFirst.
     new StaleWhileRevalidate({
         cacheName: 'images',
         plugins: [
             // Ensure that once this runtime cache reaches a maximum size the
             // least-recently used images are removed.
-            new ExpirationPlugin({ maxEntries: 50 }),
+            new ExpirationPlugin({maxEntries: 50}),
         ],
     })
 );
 
 // Cache rides page
 registerRoute(
-    ({ url }) => url.pathname.startsWith('/allParks'),
+    ({url}) => url.pathname.startsWith('/allParks'),
 
     new CacheFirst()
 );
@@ -190,8 +192,15 @@ function handlePush(payload: rideTime[], event: PushEvent) {
  * Run whenever the backend sends a new array of rideTimes.
  */
 (self as any).addEventListener('push', async (event: PushEvent) => {
-    //All ridetimes from the server, in the same format as the config
-    const payload = await event.data.json() as rideTime[]
+
+    //Decompress the zlib encoded data
+    const unBase64 = toByteArray(event.data.text())
+    const raw = decompressSync(unBase64)
+
+    console.debug(`using decompressed: ${strFromU8(raw)}`)
+
+    //Recreate and parse the JSON
+    const payload = JSON.parse(strFromU8(raw)) as rideTime[]
 
     console.debug("received push from server")
 
@@ -271,8 +280,11 @@ self.addEventListener('notificationclick', async (event) => {
 
 interface PushMessageData {
     arrayBuffer(): ArrayBuffer;
+
     blob(): Blob;
+
     json(): any;
+
     text(): string;
 }
 
