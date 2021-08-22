@@ -3,10 +3,11 @@
  */
 //! Defines parsers for processing queue times pages
 
+use std::collections::HashMap;
+
 use error_chain::bail;
 use scraper::html::Html;
 use scraper::selector::Selector;
-use std::collections::HashMap;
 use url::Url;
 
 use crate::error::*;

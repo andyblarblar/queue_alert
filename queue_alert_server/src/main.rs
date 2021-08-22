@@ -2,24 +2,38 @@
  * Copyright (c) 2021. Andrew Ealovega
  */
 
-mod routes;
 mod models;
+mod routes;
 
-use actix_web::*;
-use actix_files::{Files};
-use simplelog::{LevelFilter, ConfigBuilder};
+use actix_files::Files;
 use actix_web::middleware::Logger;
-use std::sync::Arc;
-use std::io::Read;
-use queue_times::client::QueueTimesClient;
-use web_push::{WebPushClient, WebPushMessageBuilder, VapidSignatureBuilder, ContentEncoding, WebPushError, PartialVapidSignatureBuilder};
-use iis::get_port;
 use actix_web::web::Data;
+use actix_web::*;
+use iis::get_port;
+use queue_times::client::QueueTimesClient;
+use simplelog::{ConfigBuilder, LevelFilter};
+use std::io::Read;
+use std::sync::Arc;
+use web_push::{
+    ContentEncoding, PartialVapidSignatureBuilder, VapidSignatureBuilder, WebPushClient,
+    WebPushError, WebPushMessageBuilder,
+};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let config = ConfigBuilder::default().add_filter_ignore_str("html5ever").add_filter_ignore_str("selectors::matching").build();
-    simplelog::SimpleLogger::init(if cfg!(feature = "prod") { LevelFilter::Info } else { LevelFilter::Debug }, config).unwrap();
+    let config = ConfigBuilder::default()
+        .add_filter_ignore_str("html5ever")
+        .add_filter_ignore_str("selectors::matching")
+        .build();
+    simplelog::SimpleLogger::init(
+        if cfg!(feature = "prod") {
+            LevelFilter::Info
+        } else {
+            LevelFilter::Debug
+        },
+        config,
+    )
+    .unwrap();
 
     //Get port for listening. IIS has its own port.
     let port: String;
@@ -28,7 +42,10 @@ async fn main() -> std::io::Result<()> {
         log::info!("Got port {} from IIS", port)
     } else {
         port = "8080".to_string();
-        log::info!("Not configured to use any server, defaulting to port: {}", port)
+        log::info!(
+            "Not configured to use any server, defaulting to port: {}",
+            port
+        )
     }
 
     //Load keys
@@ -52,7 +69,7 @@ async fn main() -> std::io::Result<()> {
     let timer_keys = keys.clone();
 
     let timer = timer::Timer::new();
-    let _timer_scope /*RAII type*/ = timer.schedule_repeating(chrono::Duration::seconds(120), move || {
+    let _timer_scope /*RAII type*/ = timer.schedule_repeating(chrono::Duration::seconds(30), move || {
         //Clone again to preserve FnMut
         let timer_subs2 = timer_subs.clone();
         let timer_client2 = timer_client.clone();
@@ -126,14 +143,14 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         //Enable cors only in prod
-        let cors = actix_cors::Cors::permissive();//TODO cors breaks prod
-        //if cfg!(feature = "prod")
-        //{ actix_cors::Cors::default() } else { actix_cors::Cors::permissive() };
+        let cors = actix_cors::Cors::permissive(); //TODO cors breaks prod
+                                                   //if cfg!(feature = "prod")
+                                                   //{ actix_cors::Cors::default() } else { actix_cors::Cors::permissive() };
 
         App::new()
             .wrap(cors)
             .wrap(Logger::new("%{r}a %U %s"))
-            .app_data(Data::new(subs.clone()))//Clients to push to
+            .app_data(Data::new(subs.clone())) //Clients to push to
             .app_data(Data::new((keys.0.clone(), keys.1.clone())))
             .app_data(Data::new(queue_client.clone()))
             //Begin endpoints
@@ -143,11 +160,11 @@ async fn main() -> std::io::Result<()> {
             .service(routes::registration::get_current_user_count)
             .service(routes::queue::get_all_parks)
             .service(routes::queue::get_park_wait_times)
-            .service(Files::new("/", "./www").index_file("index.html"))//Must be last, serves static site
+            .service(Files::new("/", "./www").index_file("index.html")) //Must be last, serves static site
     })
-        .bind(format!("0.0.0.0:{}", port))?
-        .run()
-        .await
+    .bind(format!("0.0.0.0:{}", port))?
+    .run()
+    .await
 }
 
 /// Loads a PEM private key from a local file './private_key.pem', and generates a public key
@@ -155,7 +172,11 @@ async fn main() -> std::io::Result<()> {
 ///
 /// # Generation
 /// `openssl ecparam -genkey -name prime256v1 -out private_key.pem`
-fn load_private_key() -> std::io::Result<(models::PrivateKey, models::PublicKey, PartialVapidSignatureBuilder)> {
+fn load_private_key() -> std::io::Result<(
+    models::PrivateKey,
+    models::PublicKey,
+    PartialVapidSignatureBuilder,
+)> {
     let mut file = std::fs::File::open("./private_key.pem")?;
     let mut str = String::new();
 

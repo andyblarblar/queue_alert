@@ -5,7 +5,7 @@
 use error_chain::error_chain;
 
 #[cfg(not(feature = "client"))]
-error_chain!{
+error_chain! {
 
     foreign_links {
         Url( url::ParseError);
@@ -28,7 +28,7 @@ error_chain!{
 
 //feature gate so we dont import tokio just for errors
 #[cfg(feature = "client")]
-error_chain!{
+error_chain! {
 
     foreign_links {
         Url( url::ParseError);

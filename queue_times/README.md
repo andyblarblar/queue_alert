@@ -1,8 +1,7 @@
- queue_times is a crate for scraping data from the [queue times website.](https://queue-times.com/en-US)
+queue_times is a crate for scraping data from the [queue times website.](https://queue-times.com/en-US)
 
-
- Most consumers of this crate will want to use [`client::CachedClient`] or another client from [`client`].
- This is enabled with the feature `client`.
+Most consumers of this crate will want to use [`client::CachedClient`] or another client from [`client`]. This is
+enabled with the feature `client`.
 
  ```rust
  use queue_times::client::{Client, QueueTimesClient, CachedClient};
@@ -16,6 +15,5 @@
  println!("The current wait for Millennium Force is: {:?}", mille_wait.status)
  ```
 
-
- [`parser`] contains structs for parsing ride times from the raw html, and can be extended for
- parsing either newer versions of queue times as the API breaks, or even other websites (or anything really).
+[`parser`] contains structs for parsing ride times from the raw html, and can be extended for parsing either newer
+versions of queue times as the API breaks, or even other websites (or anything really).

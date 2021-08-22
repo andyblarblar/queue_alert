@@ -2,14 +2,14 @@
  * Copyright (c) 2021. Andrew Ealovega
  */
 
-use actix_web::{Responder, HttpResponse, get, post, Result};
-use actix_web::web;
-use web_push::*;
-use std::sync::{Arc};
-use tokio::sync::RwLock;
 use crate::models::Keys;
-use std::ops::Deref;
 use crate::routes::registration::Registration;
+use actix_web::web;
+use actix_web::{get, post, HttpResponse, Responder, Result};
+use std::ops::Deref;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use web_push::*;
 
 pub type RWVec = RwLock<Vec<Registration>>;
 pub type QClient = queue_times::client::CachedClient<queue_times::client::Client>;
@@ -47,7 +47,10 @@ pub mod registration {
 
     /// Adds the subscription to the vec of clients to push. Does not duplicate registrations if already set.
     #[post("/register")]
-    pub async fn register(subscription: web::Json<Registration>, subs: web::Data<Arc<RWVec>>) -> Result<impl Responder> {
+    pub async fn register(
+        subscription: web::Json<Registration>,
+        subs: web::Data<Arc<RWVec>>,
+    ) -> Result<impl Responder> {
         let subscription = subscription.into_inner();
 
         //Check if already registered. Get as write to avoid race condition on index to insert to.
@@ -56,9 +59,7 @@ pub mod registration {
 
         match exists {
             //Already registered
-            Ok(_) => {
-                Ok(HttpResponse::Ok())
-            }
+            Ok(_) => Ok(HttpResponse::Ok()),
             //Register in sorted order
             Err(idx) => {
                 log::info!("Registered new user");
@@ -73,7 +74,10 @@ pub mod registration {
     /// Removes the subscription from the server, stopping push notifications. Clients still need to unsub from the
     /// push service on their end.
     #[post("/unregister")]
-    pub async fn unregister(subscription: web::Json<SubscriptionInfo>, subs: web::Data<Arc<RWVec>>) -> impl Responder {
+    pub async fn unregister(
+        subscription: web::Json<SubscriptionInfo>,
+        subs: web::Data<Arc<RWVec>>,
+    ) -> impl Responder {
         let subscription = subscription.into_inner();
 
         //Remove client based upon their endpoint, which is unique. Get as write to avoid race condition on index.
@@ -96,7 +100,7 @@ pub mod registration {
 pub mod queue {
     use super::*;
     use queue_times::client::QueueTimesClient;
-    use std::collections::{BTreeMap};
+    use std::collections::BTreeMap;
 
     ///Responds with a JSON object of {name, park_url}, sorted by name.
     #[get("/allParks")]
@@ -107,7 +111,10 @@ pub mod queue {
         match res {
             Ok(mut map) => {
                 //Sort map by name
-                let map = map.drain().map(|(n, u)| (n, u.to_string())).collect::<BTreeMap<String, String>>();
+                let map = map
+                    .drain()
+                    .map(|(n, u)| (n, u.to_string()))
+                    .collect::<BTreeMap<String, String>>();
                 Ok(HttpResponse::Ok().json(map))
             }
             Err(err) => {
@@ -127,7 +134,10 @@ pub mod queue {
     /// # Example
     /// `GET /parkWaitTimes?url=...`
     #[get("/parkWaitTimes")]
-    pub async fn get_park_wait_times(client: web::Data<Arc<QClient>>, url: web::Query<UrlQuery>) -> impl Responder {
+    pub async fn get_park_wait_times(
+        client: web::Data<Arc<QClient>>,
+        url: web::Query<UrlQuery>,
+    ) -> impl Responder {
         use url::Url;
 
         let client = client.into_inner();

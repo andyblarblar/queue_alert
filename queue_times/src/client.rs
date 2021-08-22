@@ -24,6 +24,8 @@
 //! if the signatures don't seem obvious.
 
 use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use async_trait::async_trait;
 use chrono::{Duration, Local};
@@ -34,8 +36,6 @@ use url::Url;
 use crate::error::*;
 use crate::model::RideTime;
 use crate::parser::{FrontPageParser, GenericParkParser, ParkParser};
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Base Url to the queue times website.
 pub static BASE_URL: &str = "https://queue-times.com";
@@ -152,24 +152,25 @@ impl QueueTimesClient for Client {
 /// println!("The current wait for Millennium Force is: {:?}", mille_wait.status)
 /// ```
 pub struct CachedClient<T>
-where
-    T: QueueTimesClient + Send + Sync + 'static,
+    where
+        T: QueueTimesClient + Send + Sync + 'static,
 {
     /// The client, Arc wrapped to allow for use in tokio tasks.
     client: Arc<T>,
     /// Cache of park URL to ride times. This should contain all parks at all times.
     ride_cache: Arc<dashmap::DashMap<Url, Vec<RideTime>>>,
     /// Cache of park name to URL to rides page. Never needs to be updated.
-    parks_cache: RwLock<HashMap<String, Url>>, //use RwLock over dashmap to avoid clone when returning
+    parks_cache: RwLock<HashMap<String, Url>>,
+    //use RwLock over dashmap to avoid clone when returning
     /// Last update to cache, update every 5 minutes.
     last_updated: Arc<RwLock<chrono::DateTime<Local>>>,
     /// True if cache is currently updating in background.
-    currently_updating_cache: Arc<AtomicBool>
+    currently_updating_cache: Arc<AtomicBool>,
 }
 
 impl<T> CachedClient<T>
-where
-    T: QueueTimesClient + Send + Sync + 'static,
+    where
+        T: QueueTimesClient + Send + Sync + 'static,
 {
     /// Wraps the passed client with a cache.
     pub fn new(client: T) -> Self {
@@ -178,15 +179,15 @@ where
             ride_cache: Arc::new(dashmap::DashMap::new()),
             parks_cache: RwLock::new(HashMap::new()),
             last_updated: Arc::new(RwLock::new(Local::now() - Duration::minutes(6))),
-            currently_updating_cache: Arc::new(Default::default())
+            currently_updating_cache: Arc::new(Default::default()),
         }
     }
 }
 
 #[async_trait]
 impl<T> QueueTimesClient for CachedClient<T>
-where
-    T: QueueTimesClient + Send + Sync + 'static,
+    where
+        T: QueueTimesClient + Send + Sync + 'static,
 {
     async fn get_park_urls(&self) -> Result<HashMap<String, Url>> {
         //Fill cache if never been used
@@ -237,7 +238,7 @@ where
 
             //Update cache in background, and eagerly return the requested park
             tokio::spawn(async move {
-                let _guard = CompletionGuard{complete: currently_updating};
+                let _guard = CompletionGuard { complete: currently_updating };
 
                 //Get each park
                 for (_, park_url) in parks.drain() {
@@ -264,7 +265,7 @@ impl Default for CachedClient<Client> {
 /// RAII type that signals the completion or cancellation of a task.
 /// Will be `false` on drop, useful for ensuring cancelled async tasks are handled.
 struct CompletionGuard {
-    complete: Arc<AtomicBool>
+    complete: Arc<AtomicBool>,
 }
 
 impl Drop for CompletionGuard {
