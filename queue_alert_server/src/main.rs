@@ -70,21 +70,23 @@ async fn main() -> std::io::Result<()> {
     let timer_subs = subs.clone();
     let timer_client = queue_client.clone();
     let timer_keys = keys.clone();
-
     let timer = timer::Timer::new();
-    let _timer_scope /*RAII type*/ = timer.schedule_repeating(chrono::Duration::seconds(30), move || {
+    //This seems to need to be in main, else it drops
+    let _timer_scope /*RAII type*/ = timer.schedule_repeating(chrono::Duration::seconds(60), move || {
         //Clone again to preserve FnMut
         let timer_subs2 = timer_subs.clone();
         let timer_client2 = timer_client.clone();
         let timer_keys2 = timer_keys.clone();
         let timer_push = push_client.clone();
 
+        //Create local Tokio as actix uses its own runtime.
         let tok = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .unwrap();
 
         tok.block_on(async move {
+            //Skip if no subscribers
             {
                 let subs = timer_subs2.read().await;
 
@@ -96,11 +98,12 @@ async fn main() -> std::io::Result<()> {
             let parks = timer_client2.get_park_urls().await;
 
             if let Err(why) = &parks {
-                log::error!("While getting parks: {}",why);
+                log::error!("While getting parks: {}", why);
                 return;
             }
             let parks = parks.unwrap();
 
+            //Lock subscriptions vector until we finish
             let subs = timer_subs2.read().await;
 
             log::info!("pushing to {} clients", subs.len());
@@ -109,14 +112,15 @@ async fn main() -> std::io::Result<()> {
             for sub in subs.iter() {
                 let url = parks.get(&sub.park);
                 if url.is_none() {
-                    log::error!("Submitted invalid park {}",sub.park);
+                    log::error!("Submitted invalid park {}", sub.park);
                     continue;
                 }
 
+                //Get the relevant rides for this subscription
                 let rides = timer_client2.get_ride_times(url.unwrap().to_owned()).await;
 
                 if let Err(why) = rides {
-                    log::error!("While getting rides: {}",why);
+                    log::error!("While getting rides: {}", why);
                     continue;
                 }
 
@@ -124,20 +128,25 @@ async fn main() -> std::io::Result<()> {
 
                 let content = serde_json::to_string(&rides.unwrap()).unwrap();
 
-                log::info!("JSON used: {}", content);
-
                 //Compress JSON with gzip
-                let mut encoder = GzEncoder::new(Vec::new(), Compression::best());
+                let mut encoder = GzEncoder::new(Vec::new(), Compression::best()); //TODO we can prob reuse a buffer here
                 encoder.write_all(content.as_bytes()).unwrap();
                 let content = encoder.finish().unwrap();
-                //URLbase64 encode so the browser accepts the bytes //TODO change to reuse string to avoid allocs. It doesnt seem to be base64 encodig right.
+
+                //Web push will reject non text payloads, so base64 encode
                 let content = base64::encode(&content);
 
-                log::info!("Encoded used: {}", content);
                 log::debug!("Content size: {} bytes", content.len());
 
-                //*Must* set vapid signature, else error
-                builder.set_vapid_signature(timer_keys2.2.clone().add_sub_info(&sub.sub).build().unwrap());
+                //*Must* set vapid signature, else the push will be rejected
+                builder.set_vapid_signature(
+                    timer_keys2
+                        .2
+                        .clone()
+                        .add_sub_info(&sub.sub)
+                        .build()
+                        .unwrap(),
+                );
                 builder.set_payload(ContentEncoding::Aes128Gcm, content.as_bytes());
 
                 let message = builder.build();
@@ -155,10 +164,8 @@ async fn main() -> std::io::Result<()> {
     });
 
     HttpServer::new(move || {
-        //Enable cors only in prod
-        let cors = actix_cors::Cors::permissive(); //TODO cors breaks prod
-                                                   //if cfg!(feature = "prod")
-                                                   //{ actix_cors::Cors::default() } else { actix_cors::Cors::permissive() };
+        //We don't need no security 😎
+        let cors = actix_cors::Cors::permissive();
 
         App::new()
             .wrap(cors)
@@ -208,12 +215,12 @@ fn load_private_key() -> std::io::Result<(
 
 #[cfg(test)]
 mod test {
-    use std::io::{Write, Read};
+    use std::io::{Read, Write};
 
+    use flate2::read::GzDecoder;
     use flate2::write::GzEncoder;
     use flate2::Compression;
     use serde_json::Value;
-    use flate2::read::GzDecoder;
 
     fn get_content() -> Value {
         serde_json::json!([{"name":"Blue Streak","status":"Closed"},{"name":"Cedar Creek Mine Ride","status":"Closed"},{"name":"Corkscrew","status":"Closed"},{"name":"GateKeeper","status":"Closed"},{"name":"Gemini","status":"Closed"},{"name":"Iron Dragon","status":"Closed"},{"name":"Magnum XL-200","status":"Closed"},{"name":"Maverick","status":"Closed"},{"name":"Millennium Force","status":"Closed"},{"name":"Pipe Scream","status":"Closed"},{"name":"Raptor","status":"Closed"},{"name":"Rougarou","status":"Closed"},{"name":"Steel Vengeance","status":"Closed"},{"name":"Top Thrill Dragster","status":"Closed"},{"name":"Valravn","status":"Closed"},{"name":"Wicked Twister","status":"Closed"},{"name":"Wilderness Run","status":"Closed"},{"name":"Woodstock Express","status":"Closed"},{"name":"4x4's","status":"Closed"},{"name":"Antique Cars","status":"Closed"},{"name":"Cadillac Cars","status":"Closed"},{"name":"Charlie Brown's Wind-Up","status":"Closed"},{"name":"Flying Ace Balloon Race","status":"Closed"},{"name":"Giant Wheel","status":"Closed"},{"name":"Midway Carousel","status":"Closed"},{"name":"Peanuts 500","status":"Closed"},{"name":"Peanuts Road Rally","status":"Closed"},{"name":"Snoopy's Deep Sea Divers","status":"Closed"},{"name":"Snoopy's Express Railroad","status":"Closed"},{"name":"Tilt-A-Whirl","status":"Closed"},{"name":"Woodstock's Whirlybirds","status":"Closed"},{"name":"Dune Buggies","status":"Closed"},{"name":"Helicopters","status":"Closed"},{"name":"Joe Cool's Dodgem School","status":"Closed"},{"name":"Motorcycles","status":"Closed"},{"name":"Police Cars","status":"Closed"},{"name":"Rock, Spin, and Turn","status":"Closed"},{"name":"Roto Whip","status":"Closed"},{"name":"Sky Fighters","status":"Closed"},{"name":"Snoopy's Space Race","status":"Closed"},{"name":"Space Age","status":"Closed"},{"name":"Cedar Downs Racing Derby","status":"Closed"},{"name":"Dodgem","status":"Closed"},{"name":"Matterhorn","status":"Closed"},{"name":"MaXair","status":"Closed"},{"name":"Monster","status":"Closed"},{"name":"Power Tower","status":"Closed"},{"name":"Scrambler","status":"Closed"},{"name":"Skyhawk","status":"Closed"},{"name":"SlingShot","status":"Closed"},{"name":"Super Himalaya","status":"Closed"},{"name":"Thunder Canyon","status":"Closed"},{"name":"Tiki Twirl","status":"Closed"},{"name":"Troika","status":"Closed"},{"name":"Fisherman's Fury","status":"Open"}])

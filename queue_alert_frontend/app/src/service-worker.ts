@@ -125,7 +125,7 @@ function loadConfig() {
 let config: AlertConfig | null = null
 loadConfig().then((conf) => config = conf)
 
-function handlePush(payload: rideTime[], event: PushEvent) {
+function handlePush(payload: rideTime[]) {
 
     //Use our own badges and tag each ride to avoid reporting the same ride more than once.
     const notificationConfig = {
@@ -197,14 +197,12 @@ function handlePush(payload: rideTime[], event: PushEvent) {
     const unBase64 = toByteArray(event.data.text())
     const raw = decompressSync(unBase64)
 
-    console.debug(`using decompressed: ${strFromU8(raw)}`)
-
     //Recreate and parse the JSON
     const payload = JSON.parse(strFromU8(raw)) as rideTime[]
 
     console.debug("received push from server")
 
-    event.waitUntil(handlePush(payload, event))
+    event.waitUntil(handlePush(payload))
 });
 
 /**
