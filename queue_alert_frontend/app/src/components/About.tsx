@@ -6,13 +6,13 @@
  * @file About page.
  */
 
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import Faq from "./Faq";
-import { useQaClient } from "./qaUrlStore";
+import {useQaClient} from "./qaUrlStore";
 
 function About() {
     const [userCount, setUserCount] = useState(0)
-    const { client } = useQaClient()
+    const {client} = useQaClient()
 
     useEffect(() => {
         client.getUserCount().then(users => {
@@ -26,11 +26,13 @@ function About() {
         <div id="FAQ-container">
             <div id="about-welcome">
                 <Faq title={`Welcome to Queue Alert, currently serving ${userCount} users!`}>
-                    Queue Alert is a Progressive Web App (PWA) that will send notifications whenever an amusement ride reaches
+                    Queue Alert is a Progressive Web App (PWA) that will send notifications whenever an amusement ride
+                    reaches
                     a certain wait-time threshold. This app was inspired by a particularly windy trip to Cedar Point,
                     where I spent all day checking <a href="https://queue-times.com">Queue times</a> on my phone
                     while waiting for SteVe to open. Queue Alert aims to be a mobile first, streamlined, and ergonomic
-                    solution to automate checking wait times such that you can spend less time checking your phone, and more time
+                    solution to automate checking wait times such that you can spend less time checking your phone, and
+                    more time
                     enjoying your visit.
                 </Faq>
             </div>
@@ -44,14 +46,22 @@ function About() {
                 will work immediately.
             </Faq>
 
+            <Faq title="I keep getting 'Website updated in the background' notifications!">
+                This is due to privacy features in the web push API. Whenever the app receives an update from the
+                server,
+                a notification must be shown. If there are no ride alerts to notify you with, This notification is used
+                as
+                a placeholder.
+            </Faq>
+
             <Faq title="I keep getting 'Cannot connect to server' errors!">
                 This is likely due to the Queue Alert backend, which is currently self hosted, being down.
                 If this app gets popular, I may move this to a cloud implementation to improve uptime and speed.
             </Faq>
 
             <Faq title="How do I stop getting notifications?">
-                To stop getting notifications, head to the park page you've subscribed to and flick all switches
-                off. Now just save the config, and notifications will stop.
+                To stop getting notifications, simply delete all set alerts by clicking the trashcan icon in the
+                current alerts table.
             </Faq>
 
             <Faq title="Where do you get the ride times from?">
@@ -61,16 +71,16 @@ function About() {
             </Faq>
 
             <Faq title="Is there any way to submit an issue?">
-                Sure, if you're technical enough. Queue Alerts is FOSS, hosted on <a href="https://github.com/andyblarblar/queue_alert">github</a>. If
-                you want, you can leave an issue on the repo and I'll see if I can work on it. Please don't submit anything on this FAQ,
+                Sure, if you're technical enough. Queue Alerts is FOSS, hosted on <a
+                href="https://github.com/andyblarblar/queue_alert">github</a>. If
+                you want, you can leave an issue on the repo and I'll see if I can work on it. Please don't submit
+                anything on this FAQ,
                 and provide your browser version for any issues. Thanks!
             </Faq>
 
             <Faq title="Can I configure multiple parks at once?">
-                Unfortunately, Queue Alert was not designed for multiple parks at once. While this could
-                (and may) be added at a later time, I began to hit transfer size constraints when multiple parks
-                were used. Should the push notification be compressed, this would be possible, yet the server
-                refuses to send when this is applied {'>'}:[
+                Unfortunately, Queue Alert was not designed for multiple parks at once. This was initially due to size
+                constraints, but may be added in the future if I get the time.
             </Faq>
 
         </div>
