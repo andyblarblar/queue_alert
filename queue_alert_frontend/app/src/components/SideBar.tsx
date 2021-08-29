@@ -57,7 +57,7 @@ const SideBar: React.FC<props> = ({ toggled, onToggle, onItemClick }) => {
                             <FaShareAlt size='29' opacity='0.9' />
                         </div>
 
-                        <span style={{marginLeft: "5px", opacity: "0.6", fontSize: "xx-small"}}>v1.1.0</span>
+                        <span style={{marginLeft: "5px", opacity: "0.6", fontSize: "xx-small"}}>v1.1.1</span>
                     </MenuItem>
                     <MenuItem id="designed-by">
                         <a href="https://ealovega.dev" target="_" rel="noreferrer noopener">Made with 💜 by Andrew Ealovega</a>

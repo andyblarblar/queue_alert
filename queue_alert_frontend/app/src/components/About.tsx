@@ -49,7 +49,7 @@ function About() {
             <Faq title="I keep getting 'Website updated in the background' notifications!">
                 This is due to privacy features in the web push API. Whenever the app receives an update from the
                 server,
-                a notification must be shown. If there are no ride alerts to notify you with, This notification is used
+                a notification must be shown. If there are no ride alerts to notify you with, this notification is used
                 as
                 a placeholder.
             </Faq>
