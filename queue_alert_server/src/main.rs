@@ -105,6 +105,8 @@ async fn main() -> std::io::Result<()> {
 
             //Lock subscriptions vector until we finish
             let subs = timer_subs2.read().await;
+            //Subs to remove after a send fails. Endpoints are unique, so they are used as an ID.
+            let mut subs_to_remove: Vec<String> = Vec::new();
 
             log::info!("pushing to {} clients", subs.len());
 
@@ -156,10 +158,31 @@ async fn main() -> std::io::Result<()> {
                     if why == WebPushError::PayloadTooLarge {
                         log::error!("Payload for message was too large!");
                     }
-                } else if let Err(why) = timer_push.send(message.unwrap()).await {
-                    log::error!("When sending webpush to client: {}", why);
+                }
+                //Send the message
+                else if let Err(why) = timer_push.send(message.unwrap()).await {
+                    match why {
+                        //Add expired endpoints to removal list
+                        WebPushError::EndpointNotValid => {
+                            let endpoint = sub.sub.endpoint.clone();
+                            subs_to_remove.push(endpoint);
+                            log::info!("Added expired endpoint for removal.");
+                        }
+                        WebPushError::EndpointNotFound => {
+                            let endpoint = sub.sub.endpoint.clone();
+                            subs_to_remove.push(endpoint);
+                            log::info!("Added expired endpoint for removal.");
+                        }
+                        _ => log::error!("When sending webpush to client: {}", why)
+                    }
                 }
             }
+
+            //Drop reader and obtain write lock to remove old subs.
+            std::mem::drop(subs);
+            let mut subs = timer_subs2.write().await;
+
+            subs.retain(|sub| !subs_to_remove.contains(&sub.sub.endpoint));
         });
     });
 
@@ -222,6 +245,7 @@ mod test {
     use flate2::Compression;
     use serde_json::Value;
 
+    #[allow(unreachable_code)]
     fn get_content() -> Value {
         serde_json::json!([{"name":"Blue Streak","status":"Closed"},{"name":"Cedar Creek Mine Ride","status":"Closed"},{"name":"Corkscrew","status":"Closed"},{"name":"GateKeeper","status":"Closed"},{"name":"Gemini","status":"Closed"},{"name":"Iron Dragon","status":"Closed"},{"name":"Magnum XL-200","status":"Closed"},{"name":"Maverick","status":"Closed"},{"name":"Millennium Force","status":"Closed"},{"name":"Pipe Scream","status":"Closed"},{"name":"Raptor","status":"Closed"},{"name":"Rougarou","status":"Closed"},{"name":"Steel Vengeance","status":"Closed"},{"name":"Top Thrill Dragster","status":"Closed"},{"name":"Valravn","status":"Closed"},{"name":"Wicked Twister","status":"Closed"},{"name":"Wilderness Run","status":"Closed"},{"name":"Woodstock Express","status":"Closed"},{"name":"4x4's","status":"Closed"},{"name":"Antique Cars","status":"Closed"},{"name":"Cadillac Cars","status":"Closed"},{"name":"Charlie Brown's Wind-Up","status":"Closed"},{"name":"Flying Ace Balloon Race","status":"Closed"},{"name":"Giant Wheel","status":"Closed"},{"name":"Midway Carousel","status":"Closed"},{"name":"Peanuts 500","status":"Closed"},{"name":"Peanuts Road Rally","status":"Closed"},{"name":"Snoopy's Deep Sea Divers","status":"Closed"},{"name":"Snoopy's Express Railroad","status":"Closed"},{"name":"Tilt-A-Whirl","status":"Closed"},{"name":"Woodstock's Whirlybirds","status":"Closed"},{"name":"Dune Buggies","status":"Closed"},{"name":"Helicopters","status":"Closed"},{"name":"Joe Cool's Dodgem School","status":"Closed"},{"name":"Motorcycles","status":"Closed"},{"name":"Police Cars","status":"Closed"},{"name":"Rock, Spin, and Turn","status":"Closed"},{"name":"Roto Whip","status":"Closed"},{"name":"Sky Fighters","status":"Closed"},{"name":"Snoopy's Space Race","status":"Closed"},{"name":"Space Age","status":"Closed"},{"name":"Cedar Downs Racing Derby","status":"Closed"},{"name":"Dodgem","status":"Closed"},{"name":"Matterhorn","status":"Closed"},{"name":"MaXair","status":"Closed"},{"name":"Monster","status":"Closed"},{"name":"Power Tower","status":"Closed"},{"name":"Scrambler","status":"Closed"},{"name":"Skyhawk","status":"Closed"},{"name":"SlingShot","status":"Closed"},{"name":"Super Himalaya","status":"Closed"},{"name":"Thunder Canyon","status":"Closed"},{"name":"Tiki Twirl","status":"Closed"},{"name":"Troika","status":"Closed"},{"name":"Fisherman's Fury","status":"Open"}])
     }
