@@ -195,7 +195,15 @@ export default class QueueAlertAccess {
     async unregisterWithBackend(): Promise<Result<null, number>> {
 
         if (this.sub == null) {
-            return Err(1)
+            //Double check we aren't subbed, to avoid crashing needlessly
+            const worker = await navigator.serviceWorker.getRegistration('/')
+            let sub = await worker?.pushManager.getSubscription()
+
+            if (sub == null) {
+                return Err(1)
+            }
+
+            this.sub = sub
         }
 
         const res = await fetch(this.url + '/unregister', {

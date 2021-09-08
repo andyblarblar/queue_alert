@@ -20,7 +20,8 @@ function UseConfigSave(onSave: ((config: AlertConfig) => void) | undefined) {
     return async () => {
         //Unsub user from services if config is empty.
         if (config[1].length === 0) {
-            await client.unregisterWithBackend()//Ignore failures
+            let res = await client.unregisterWithBackend()//Ignore failures
+            if (res.err) console.error(`Error when unregistering from backend ${res.val}`)
             await client.unsubscribeUserFromPush()
         }
         //Sub if config is anything else

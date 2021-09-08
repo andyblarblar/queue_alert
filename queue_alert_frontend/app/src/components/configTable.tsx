@@ -21,14 +21,6 @@ const ConfigTable: React.FC<props> = ({ onSave }) => {
     const saveConfig = UseConfigSave(onSave)
     const saveNextRefresh = useRef(false)
 
-    //Save config when delete button pressed.
-    useEffect(() => {
-        if (saveNextRefresh.current) {
-            saveNextRefresh.current = false
-            saveConfig().then()
-        }
-    })
-
     useEffect(() => {
         //Reset the config to null if nothing is selected. This prevents the empty table glitch.
         if (config[1].length === 0 && config[0] !== 'none') {
@@ -36,6 +28,14 @@ const ConfigTable: React.FC<props> = ({ onSave }) => {
             dispatch({
                 type: "reset"
             })
+        }
+    })
+
+    //Save config when delete button pressed.
+    useEffect(() => {
+        if (saveNextRefresh.current) {
+            saveNextRefresh.current = false
+            saveConfig().then()
         }
     })
 
