@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useRef } from "react"
-import { Redirect, useLocation } from "react-router-dom"
+import { useLocation, Navigate } from "react-router-dom"
 import { toast } from "react-toastify"
 import { sendConfigToSW } from "../api/alertConfig"
 import { useConfig } from "./ConfigStore"
@@ -61,7 +61,7 @@ function SharedHome() {
 }
 
 function redirectOrNot(shouldRedirect: boolean) {
-    return shouldRedirect ? <Redirect to="/" /> : <div>Loading shared config...</div>
+    return shouldRedirect ? <Navigate to="/" /> : <div>Loading shared config...</div>
 }
 
 function useQuery() {

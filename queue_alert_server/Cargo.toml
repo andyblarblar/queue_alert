@@ -6,9 +6,9 @@ edition = "2018"
 
 [dependencies]
 web-push = { version = "^0.9.0", features = ["hyper-client"], default-features = false }
-queue_times = { version = "^0.0.4", features = ["client"] }
+queue_times = { path = "../queue_times", features = ["client"] }
 base64 = "^0.13.0"
-dashmap = "^4.0.2"
+dashmap = "^5.4.0"
 url = "^2.2.2"
 serde = { version = "^1.0.126", features = ["derive"] }
 serde_json = "^1.0.64"
@@ -17,18 +17,18 @@ chrono = "^0.4.19"
 flate2 = "^1.0.20"
 
 #These are really annoying to keep in sync, but need to be updated as they are in beta.
-actix-web = "4.0.0-beta.8"
-actix-rt = "2.2.0"
-actix-files = "0.6.0-beta.6"
-actix-http = "3.0.0-beta.9"
-actix-service = "2.0.0"
-actix-cors = "0.6.0-beta.2"
+actix-web = "^4.3.1"
+actix-rt = "^2.8.0"
+actix-files = "^0.6.2"
+actix-http = "^3.3.1"
+actix-service = "^2.0.2"
+actix-cors = "^0.6.4"
 
 tokio = { version = "^1", features = ["sync"] }
 iis = "^0.1.0"
 
 log = "^0.4.14"
-simplelog = "^0.10.0"
+simplelog = "^0.12.1"
 
 [features]
 host_iis = ["prod"] #enables the server to be hosted on iis

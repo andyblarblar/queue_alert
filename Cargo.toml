@@ -1,5 +1,5 @@
-
 [workspace]
+resolver = "2"
 members = ["queue_alert_server", "queue_times"]
 
 [profile.release]
