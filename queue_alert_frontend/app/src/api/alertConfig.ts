@@ -2,7 +2,7 @@
  * Copyright (c) 2021. Andrew Ealovega
  */
 
-import { Result, Ok, Err } from "ts-results";
+import {Err, Ok, Result} from "ts-results";
 
 /**
  * Tuple of {parkname, all rides for that park}. alertOn number is always the wait in minutes.
@@ -54,27 +54,26 @@ export async function getConfigFromSW(): Promise<AlertConfig | null> {
 
     //Wrap response event in promise to make async
     let responsePromise = new Promise(async (resolve, reject) => {
-        let config = undefined //localforge returns null on not set, so it will never return undefined.
+        let config2 = undefined //localforge returns null on not set, so it will never return undefined.
 
         //Set config when received 
         const onResponse = (ev: MessageEvent<any>) => {
             console.debug('got config from SW message')
-            const response = ev.data as AlertConfig | null
-            config = response
-            console.debug(`got config from SW ${config}`)
+            config2 = ev.data as AlertConfig | null
+            console.debug(`got config from SW ${config2}`)
         }
 
         navigator.serviceWorker.addEventListener('message', onResponse)
 
         //Spin until we get a response
-        while (config === undefined) {
+        while (config2 === undefined) {
             await sleep(5)
         }
 
         //Cleanup handle
         navigator.serviceWorker.removeEventListener('message', onResponse)
 
-        resolve(config)
+        resolve(config2)
     })
 
     //Send message and wait until we get a response

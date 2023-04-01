@@ -28,6 +28,8 @@ async fn main() -> std::io::Result<()> {
     let config = ConfigBuilder::default()
         .add_filter_ignore_str("html5ever")
         .add_filter_ignore_str("selectors::matching")
+        .add_filter_ignore_str("reqwest")
+        .add_filter_ignore_str("hyper")
         .build();
     simplelog::SimpleLogger::init(
         if cfg!(feature = "prod") {

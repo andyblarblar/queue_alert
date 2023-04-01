@@ -69,7 +69,7 @@ export default function App() {
   if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
     qaUrl = "http://localhost:8080"
   } else {
-    qaUrl = "https://qalert.ealovega.dev"
+    qaUrl = "http://localhost:8080" //TODO change this back to subdomain when done
   }
 
   return (
