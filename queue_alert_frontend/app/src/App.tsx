@@ -88,21 +88,13 @@ export default function App() {
 
               <Routes>
 
-                <Route path="/">
-                  <Home />
-                </Route>
+                <Route path="/" element={<Home />}/>
 
-                <Route path="/about">
-                  <About />
-                </Route>
+                <Route path="/about" element={<About />}/>
 
-                <Route path="/park/:park">
-                  <Park />
-                </Route>
+                <Route path="/park/:park" element={<Park />}/>
 
-                <Route path="/share">
-                  <SharedHome />
-                </Route>
+                <Route path="/share" element={<SharedHome />}/>
 
               </Routes>
             </div>

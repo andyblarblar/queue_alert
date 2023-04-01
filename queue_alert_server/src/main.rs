@@ -22,7 +22,8 @@ use web_push::{
 mod models;
 mod routes;
 
-#[actix_web::main]
+// TODO refactor timer to be a tokio future
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     let config = ConfigBuilder::default()
         .add_filter_ignore_str("html5ever")
