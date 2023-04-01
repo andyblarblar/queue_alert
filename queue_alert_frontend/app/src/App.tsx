@@ -5,7 +5,7 @@
 import './App.css';
 import {
   BrowserRouter as Router,
-  Switch,
+  Routes,
   Route
 }
   from "react-router-dom";
@@ -86,13 +86,13 @@ export default function App() {
             <div className="content-container">
               {hamburgerOrNot()}
 
-              <Switch>
+              <Routes>
 
-                <Route exact path="/">
+                <Route path="/">
                   <Home />
                 </Route>
 
-                <Route exact path="/about">
+                <Route path="/about">
                   <About />
                 </Route>
 
@@ -104,7 +104,7 @@ export default function App() {
                   <SharedHome />
                 </Route>
 
-              </Switch>
+              </Routes>
             </div>
 
           </Router>

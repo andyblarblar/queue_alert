@@ -2,7 +2,7 @@
  * Copyright (c) 2021. Andrew Ealovega
  */
 
-type props = { title: string }
+type props = { title: string, children?: React.ReactNode; }
 
 /**An FAQ block.*/
 const Faq: React.FC<props> = ({ title, children }) => {

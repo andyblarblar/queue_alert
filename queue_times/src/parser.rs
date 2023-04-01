@@ -51,7 +51,7 @@ impl ParkParser for GenericParkParser {
     }
 
     fn get_ride_times(&self, html: &str) -> Result<Vec<RideTime>> {
-        let html = Html::parse_document(&html);
+        let html = Html::parse_document(html);
         let all_rides = html.select(&self.selector);
 
         let mut ride_times = Vec::new();
@@ -164,7 +164,7 @@ impl FrontPageParser {
     /// cannot be parsed for parks, but does not verify if overall html is valid.
     pub fn get_park_urls(&self, html: &str) -> Result<HashMap<String, Url>> {
         let mut park_to_url = HashMap::new();
-        let html = Html::parse_document(&html);
+        let html = Html::parse_document(html);
         let parks = html.select(&self.selector);
         let mut temp_park = (String::default(), Url::parse(Self::BASE_URL).unwrap());
 

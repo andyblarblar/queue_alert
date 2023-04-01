@@ -12,7 +12,7 @@ import React, { useContext, useRef } from "react"
 
 const configContext = React.createContext<[AlertConfig, React.Dispatch<action>]>([["none", []], () => { }])
 
-type props = { oldConfig?: AlertConfig }
+type props = { oldConfig?: AlertConfig, children?: React.ReactNode; }
 
 /**
  * Provides access to an alert config. oldConfig can optionally be passed to load a previous Config on mount.

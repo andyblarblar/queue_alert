@@ -7,7 +7,7 @@ import QueueAlertAccess from "../api/queueAlertAccess"
 
 const qaContext = React.createContext({ client: new QueueAlertAccess("") })
 
-type qaUrlProps = {url: string}
+type qaUrlProps = {url: string, children?: React.ReactNode;}
 /**
  * Provides access to the QaUrlContext, which gives a client to the queue alert backend.
  */

@@ -26,7 +26,7 @@ import QASpinner from "./QASpinner"
  */
 function Park() {
     let { park } = useParams<{ park: string }>()
-    park = park.split('?')[0].replaceAll('-', ' ') //Remove query string and hyphens
+    park = park!.split('?')[0].replaceAll('-', ' ') //Remove query string and hyphens
     const parkUrl = useQuery().get('url')
 
     const isMobile = useMediaQuery({ query: "(max-width: 1200px)" })
