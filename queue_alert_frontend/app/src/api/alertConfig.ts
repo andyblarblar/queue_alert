@@ -9,7 +9,15 @@ import {Err, Ok, Result} from "ts-results";
  */
 export type AlertConfig = [string, rideConfig[]]
 
-export type rideConfig = { rideName: string, alertOn: "Open" | "Closed" | { wait: number } }
+/**
+ * The conditions selectable to alert on.
+ */
+export type alertOption = "Open" | "Closed" | { wait: number }
+
+/**
+ * An alert config for one ride.
+ */
+export type rideConfig = { rideName: string, alertOn: alertOption }
 
 /**
  * Message format for communicating with SW. Set generic to discriminated union of possible message types.

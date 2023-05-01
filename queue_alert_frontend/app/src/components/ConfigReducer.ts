@@ -7,7 +7,7 @@
  */
 
 import { useReducer } from "react"
-import { AlertConfig } from "../api/alertConfig"
+import {AlertConfig, alertOption} from "../api/alertConfig"
 
 export const useConfigReducer = () => {
     return useReducer(reducer, initConfig(), initConfig)
@@ -91,7 +91,7 @@ export type action = {
     //Ride used for adding operations
     ride?: {
         rideName: string,
-        alertOn: "Open" | "Closed" | { wait: number }
+        alertOn: alertOption
     },
     park?: string,
     oldConfig?: AlertConfig

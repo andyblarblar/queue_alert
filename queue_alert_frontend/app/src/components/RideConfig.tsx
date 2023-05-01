@@ -11,14 +11,13 @@ import { rideTime } from "../api/queueAlertAccess"
 import Switch from "react-switch"
 import useStateCallback from "../api/useEffectCallback"
 import { useConfig } from "./ConfigStore"
-
-type currentAlertOn = "Open" | "Closed" | { wait: number} //TODO refactor all instances of this structure into one type
+import {alertOption} from "../api/alertConfig";
 
 type props = {
     /**The name of this ride*/
     rideInfo: rideTime,
     /**Called when config is enabled*/
-    onEnable: (userSelection: currentAlertOn, rideName: string) => void,
+    onEnable: (userSelection: alertOption, rideName: string) => void,
     /**Called when config is disabled*/
     onDisable: (rideName: string) => void,
 }
@@ -35,7 +34,7 @@ const RideConfig: React.FC<props> = ({ rideInfo, onEnable, onDisable }) => {
     const switchChecked = oldRideConfig != null
 
     //Local config used for saving select box state. This is independent of the global config.
-    const [switchSelectedConfig, setConfig] = useStateCallback<currentAlertOn | undefined>(oldRideConfig?.alertOn)
+    const [switchSelectedConfig, setConfig] = useStateCallback<alertOption | undefined>(oldRideConfig?.alertOn)
 
     /**Creates the select component that handles the user facing alert configs*/
     const getSelect = () => {
