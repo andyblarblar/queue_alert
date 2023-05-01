@@ -2,28 +2,22 @@
  * Copyright (c) 2021. Andrew Ealovega
  */
 
-use std::io::{Read, Write};
-use std::sync::Arc;
-
+use crate::app::Application;
 use actix_files::Files;
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::*;
-use flate2::write::GzEncoder;
-use flate2::Compression;
 use iis::get_port;
-use queue_times::client::QueueTimesClient;
-use crate::models::RideStatus;
 use simplelog::{ConfigBuilder, LevelFilter};
-use web_push::{
-    ContentEncoding, PartialVapidSignatureBuilder, VapidSignatureBuilder, WebPushClient,
-    WebPushError, WebPushMessageBuilder,
-};
+use std::io::Read;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use web_push::{PartialVapidSignatureBuilder, VapidSignatureBuilder, WebPushClient};
 
+mod app;
 mod models;
 mod routes;
 
-// TODO refactor timer to be a tokio future
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     let config = ConfigBuilder::default()
@@ -64,153 +58,17 @@ async fn main() -> std::io::Result<()> {
     let keys = keys.unwrap();
 
     //All subscribed users, to be sorted by endpoint to allow for binary searches
-    let subs = Arc::new(routes::RWVec::new(Vec::new()));
+    let subs = RwLock::new(vec![]);
     //Shared caching queue times client
-    let queue_client = Arc::new(queue_times::client::CachedClient::default());
+    let queue_client = queue_times::client::CachedClient::default();
     //Client for sending push notifications
-    let push_client = Arc::new(WebPushClient::new().unwrap());
+    let push_client = WebPushClient::new().unwrap();
 
-    //Setup timer to send push notifications
-    let timer_subs = subs.clone();
-    let timer_client = queue_client.clone();
-    let timer_keys = keys.clone();
-    let timer = timer::Timer::new();
-    //This seems to need to be in main, else it drops
-    let _timer_scope /*RAII type*/ = timer.schedule_repeating(chrono::Duration::seconds(60), move || {
-        //Clone again to preserve FnMut
-        let timer_subs2 = timer_subs.clone();
-        let timer_client2 = timer_client.clone();
-        let timer_keys2 = timer_keys.clone();
-        let timer_push = push_client.clone();
+    let app = Arc::new(Application::new(subs, queue_client, push_client, keys));
+    let tokio_app = app.clone();
 
-        //Create local Tokio as actix uses its own runtime.
-        let tok = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .unwrap();
-
-        tok.block_on(async move {
-            //Skip if no subscribers
-            {
-                let subs = timer_subs2.read().await;
-
-                if subs.is_empty() {
-                    return;
-                }
-            }
-
-            let parks = timer_client2.get_park_urls().await;
-
-            if let Err(why) = &parks {
-                log::error!("While getting parks: {}", why);
-                return;
-            }
-            let parks = parks.unwrap();
-
-            //Lock subscriptions vector until we finish
-            let subs = timer_subs2.read().await;
-            //Subs to remove after a send fails. Endpoints are unique, so they are used as an ID.
-            let mut subs_to_remove: Vec<String> = Vec::new();
-
-            log::info!("checking if we should push to {} clients", subs.len());
-
-            //Push to all clients, if they have a ride ready
-            for sub in subs.iter() {
-                let url = parks.get(&sub.config.0);
-                if url.is_none() {
-                    log::error!("Submitted invalid park {}", sub.config.0);
-                    continue;
-                }
-
-                //Get the relevant rides for this subscription
-                let rides = timer_client2.get_ride_times(url.unwrap().to_owned()).await;
-
-                if let Err(why) = rides {
-                    log::error!("While getting rides: {}", why);
-                    continue;
-                }
-                let rides = rides.unwrap();
-
-                // Get all rides to send, which are all rides the client will alert on. This is done so we dont send a push where the client will not notify.
-                let rides = rides.iter()
-                    .filter_map(|r| sub.config.1.iter().find(|rc| rc.ride_name == r.name).map(|rc| (rc, r)))
-                    .filter(|(ride_conf, ride_stat)| {
-                        log::debug!("config: {:?} server_time: {:?}", ride_conf.alert_on, ride_stat.status);
-                        // Only keep rides the user will alert on
-                        match ride_conf.alert_on {
-                            RideStatus::Open => !matches!(ride_stat.status, queue_times::model::RideStatus::Closed),
-                            RideStatus::Closed => matches!(ride_stat.status, queue_times::model::RideStatus::Closed),
-                            RideStatus::Wait(conf_t) => matches!(ride_stat.status, queue_times::model::RideStatus::Wait(stat_t) if conf_t >= stat_t)
-                        }
-                })
-                    // Reduce back to the ride-statuses we want to send to the client
-                    .map(|(_, rs)| rs)
-                    .collect::<Vec<_>>();
-
-                // If nothing to send to client, continue.
-                if rides.is_empty() {
-                    continue
-                }
-
-                let mut builder = WebPushMessageBuilder::new(&sub.sub).unwrap();
-
-                let content = serde_json::to_string(&rides).unwrap();
-
-                //Compress JSON with gzip
-                let mut encoder = GzEncoder::new(Vec::new(), Compression::best()); //TODO we can prob reuse a buffer here
-                encoder.write_all(content.as_bytes()).unwrap();
-                let content = encoder.finish().unwrap();
-
-                //Web push will reject non text payloads, so base64 encode
-                let content = base64::encode(&content);
-
-                log::debug!("Content size: {} bytes", content.len());
-
-                //*Must* set vapid signature, else the push will be rejected
-                builder.set_vapid_signature(
-                    timer_keys2
-                        .2
-                        .clone()
-                        .add_sub_info(&sub.sub)
-                        .build()
-                        .unwrap(),
-                );
-                builder.set_payload(ContentEncoding::Aes128Gcm, content.as_bytes());
-
-                let message = builder.build();
-
-                //Message will fail if too large.
-                if let Err(why) = message {
-                    if why == WebPushError::PayloadTooLarge {
-                        log::error!("Payload for message was too large!");
-                    }
-                }
-                //Send the message
-                else if let Err(why) = timer_push.send(message.unwrap()).await {
-                    match why {
-                        //Add expired endpoints to removal list
-                        WebPushError::EndpointNotValid => {
-                            let endpoint = sub.sub.endpoint.clone();
-                            subs_to_remove.push(endpoint);
-                            log::info!("Added expired endpoint for removal.");
-                        }
-                        WebPushError::EndpointNotFound => {
-                            let endpoint = sub.sub.endpoint.clone();
-                            subs_to_remove.push(endpoint);
-                            log::info!("Added expired endpoint for removal.");
-                        }
-                        _ => log::error!("When sending webpush to client: {}", why)
-                    }
-                }
-            }
-
-            //Drop reader and obtain write lock to remove old subs.
-            std::mem::drop(subs);
-            let mut subs = timer_subs2.write().await;
-
-            subs.retain(|sub| !subs_to_remove.contains(&sub.sub.endpoint));
-        });
-    });
+    // Start task that checks client configs and sends push notifications on a timer
+    tokio::spawn(async move { tokio_app.push_loop().await });
 
     HttpServer::new(move || {
         //We don't need no security 😎
@@ -219,9 +77,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .wrap(Logger::new("%{r}a %U %s"))
-            .app_data(Data::new(subs.clone())) //Clients to push to
-            .app_data(Data::new((keys.0.clone(), keys.1.clone())))
-            .app_data(Data::new(queue_client.clone()))
+            .app_data(Data::new(app.clone()))
             //Begin endpoints
             .service(routes::registration::vapid_public_key)
             .service(routes::registration::register)
@@ -255,7 +111,7 @@ fn load_private_key() -> std::io::Result<(
 
     let key_bytes = sig.get_public_key();
 
-    let final_pub = base64::encode_config(&key_bytes, base64::URL_SAFE_NO_PAD);
+    let final_pub = base64::encode_config(key_bytes, base64::URL_SAFE_NO_PAD);
 
     log::info!("Using pub key: {}", final_pub);
 

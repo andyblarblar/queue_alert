@@ -106,7 +106,7 @@ self.addEventListener('message', (event) => {
 /**
  * Locks write access to `config` when config is being read.
  */
-let configMutex: Mutex = new Mutex()
+let configMutex: Mutex = new Mutex() //TODO remove this
 
 /** Loads the config from the db if it exists. Will be null if not set. */
 function loadConfig() {
@@ -118,14 +118,7 @@ function loadConfig() {
     })
 }
 
-/**
- * Current config of rides to alert on. Null if not set. This will be updated via messages from the client, and persisted in
- * IndexedDb.
- */
-let config: AlertConfig | null = null
-loadConfig().then((conf) => config = conf)
-
-function handlePush(payload: rideTime[]) {
+function handlePush(payload: rideTime[], config: AlertConfig | null) {
 
     //Use our own badges and tag each ride to avoid reporting the same ride more than once.
     const notificationConfig = {
@@ -134,56 +127,83 @@ function handlePush(payload: rideTime[]) {
     }
 
     return configMutex.runExclusive(async () => {
+        console.debug("Starting handler")
+        console.debug(`Config: ${JSON.stringify(config)}`)
+        console.debug(`Payload: ${JSON.stringify(payload)}`)
+
+        let notified = false
+
+        let rideConfigs: null | rideConfig[]
+        if (config == null) {
+            rideConfigs = []
+        } else {
+            rideConfigs = config[1]
+        }
+
         //Check times for all rides we're waiting on. The server will send a ride only if it will alert
-        for (const [, rideConfigs] of Object.entries(config ?? [])) {
+        for (const rideConf of rideConfigs) {
+            console.debug(`Checking ride ${rideConf.rideName} for ${rideConf.alertOn}`)
 
-            for (const rideConf of rideConfigs as rideConfig[]) {
-                //Attempt to find same ride from server
-                let serverRide = payload.find(r => r.name === rideConf.rideName)
+            //Attempt to find same ride from server
+            let serverRide = payload.find(r => r.name === rideConf.rideName)
+            console.debug(`server equivalent: ${serverRide?.status}`)
 
-                //Skip if server didn't send ride/park
-                if (serverRide == null) continue
+            //Skip if server didn't send ride/park
+            if (serverRide == null) continue
 
-                //Handle alert conditions
-                switch (rideConf.alertOn) {
-                    case "Open":
-                        if (serverRide.status !== "Closed") {
-                            //Output current wait if we can
-                            if (typeof serverRide.status !== "string") {
-                                await (self as any).registration.showNotification('Ride Alert', {
-                                    body: `${rideConf.rideName} is Open with a wait of ${serverRide.status.Wait} minutes!`,
-                                    ...notificationConfig,
-                                    tag: `${rideConf.rideName}`
-                                })
-                            } else {
-                                await (self as any).registration.showNotification('Ride Alert', {
-                                    body: `${rideConf.rideName} is Open!`,
-                                    ...notificationConfig,
-                                    tag: `${rideConf.rideName}`
-                                })
-                            }
-                        }
-                        break;
-                    case "Closed":
-                        if (serverRide.status === "Closed") {
+            //Handle alert conditions
+            switch (rideConf.alertOn) {
+                case "Open":
+                    console.debug(`handling open case`)
+                    if (serverRide.status !== "Closed") {
+                        //Output current wait if we can
+                        if (typeof serverRide.status !== "string") {
                             await (self as any).registration.showNotification('Ride Alert', {
-                                body: `${rideConf.rideName} is Closed!`,
+                                body: `${rideConf.rideName} is Open with a wait of ${serverRide.status.Wait} minutes!`,
                                 ...notificationConfig,
                                 tag: `${rideConf.rideName}`
                             })
-                        }
-                        break;
-                    default: //Configured for a time
-                        if (typeof serverRide.status !== "string" && serverRide.status.Wait <= rideConf.alertOn.wait) {
+                            notified = true
+                        } else {
                             await (self as any).registration.showNotification('Ride Alert', {
-                                body: `${rideConf.rideName}'s wait is ${serverRide.status.Wait} minutes!`,
+                                body: `${rideConf.rideName} is Open!`,
                                 ...notificationConfig,
                                 tag: `${rideConf.rideName}`
                             })
+                            notified = true
                         }
-                        break;
-                }
+                    }
+                    break;
+                case "Closed":
+                    console.debug(`handling closed case`)
+                    if (serverRide.status === "Closed") {
+                        await (self as any).registration.showNotification('Ride Alert', {
+                            body: `${rideConf.rideName} is Closed!`,
+                            ...notificationConfig,
+                            tag: `${rideConf.rideName}`
+                        })
+                        notified = true
+                    }
+                    break;
+                default: //Configured for a time
+                    console.debug(`handling waittime case`)
+                    if (typeof serverRide.status !== "string" && serverRide.status.Wait <= rideConf.alertOn.wait) {
+                        await (self as any).registration.showNotification('Ride Alert', {
+                            body: `${rideConf.rideName}'s wait is ${serverRide.status.Wait} minutes!`,
+                            ...notificationConfig,
+                            tag: `${rideConf.rideName}`
+                        })
+                        notified = true
+                    }
+                    break;
             }
+        }
+
+        if (!notified) {
+            await (self as any).registration.showNotification('Oops', {
+                body: 'Somehow you managed to get a config desynced from the server! Heres a notification so Apple devices wont disable the app. Theres no need for you to do anything, this should resolve itself.',
+                ...notificationConfig
+            })
         }
     });
 }
@@ -192,7 +212,6 @@ function handlePush(payload: rideTime[]) {
  * Run whenever the backend sends a new array of rideTimes.
  */
 (self as any).addEventListener('push', async (event: PushEvent) => {
-
     //Decompress the zlib encoded data
     const unBase64 = toByteArray(event.data.text())
     const raw = decompressSync(unBase64)
@@ -202,7 +221,7 @@ function handlePush(payload: rideTime[]) {
 
     console.debug("received push from server")
 
-    event.waitUntil(handlePush(payload))
+    event.waitUntil(loadConfig().then(config => handlePush(payload, config)))
 });
 
 /**
@@ -215,10 +234,8 @@ self.addEventListener('message', async (event) => {
         console.debug("Got new config")
 
         await configMutex.runExclusive(async () => {
-            config = message.message as AlertConfig
-
             //Persist config in Db
-            await localforage.setItem('config', config)
+            await localforage.setItem('config', message.message as AlertConfig)
         })
     }
 })
@@ -228,6 +245,8 @@ self.addEventListener('message', async (event) => {
  */
 self.addEventListener('message', async (event) => {
     let message = event.data as swMessage<alertConfigMessageType>
+
+    let config = await loadConfig()
 
     if (message.type === 'getConfig') {
         console.debug(`Client requested config. sending ${config}`)
