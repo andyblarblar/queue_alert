@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useLocation, useParams } from "react-router"
 import { toast } from "react-toastify"
-import { AlertConfig } from "../api/alertConfig"
+import {AlertConfig, alertOption} from "../api/alertConfig"
 import { rideTime } from "../api/queueAlertAccess"
 import ConfigSaveButton from "./ConfigSaveButton"
 import { useConfig } from "./ConfigStore"
@@ -91,7 +91,7 @@ function Park() {
     }, [dispatch, oldConfig])
 
     //Callback to add ride
-    const onRideEnable = (userSelection: "Open" | "Closed" | { wait: number}, rideName: string) => {
+    const onRideEnable = (userSelection: alertOption, rideName: string) => {
         console.debug('on onEnable')
         //If this is the first ride selected in a new park, then change to this park.
         if (config[0] !== park) {
