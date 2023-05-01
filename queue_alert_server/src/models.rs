@@ -3,6 +3,7 @@
  */
 
 use serde::{Deserialize, Serialize};
+use web_push::{PartialVapidSignatureBuilder, SubscriptionInfo};
 
 /// EC base64 encoded private key.
 #[derive(Clone)]
@@ -12,7 +13,7 @@ pub struct PrivateKey(pub String);
 #[derive(Clone)]
 pub struct PublicKey(pub String);
 
-pub type Keys = (PrivateKey, PublicKey);
+pub type Keys = (PrivateKey, PublicKey, PartialVapidSignatureBuilder);
 
 /// Current operating status of a ride. Defaults to `Closed`.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, Ord, PartialOrd, Eq, PartialEq, Hash, Default)]
@@ -33,4 +34,13 @@ pub enum RideStatus {
 pub struct RideConfig {
     pub ride_name: String,
     pub alert_on: RideStatus,
+}
+
+/// A clients registration.
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct Registration {
+    /// Push API endpoint info.
+    pub sub: SubscriptionInfo,
+    /// Users config. Tuple of (park, Rides to wait on).
+    pub config: (String, Vec<RideConfig>),
 }

@@ -2,60 +2,45 @@
  * Copyright (c) 2021. Andrew Ealovega
  */
 
-use crate::models::Keys;
-use crate::routes::registration::Registration;
+use crate::models::Registration;
 use actix_web::web;
 use actix_web::{get, post, HttpResponse, Responder, Result};
-use std::ops::Deref;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use web_push::*;
-
-pub type RWVec = RwLock<Vec<Registration>>;
-pub type QClient = queue_times::client::CachedClient<queue_times::client::Client>;
 
 /// Routes for registering users to push.
 pub mod registration {
     use super::*;
-    use crate::models::RideConfig;
+    use crate::app::Application;
 
     /// Returns the current number of subscribed users.
     #[get("/userCount")]
-    pub async fn get_current_user_count(subs: web::Data<Arc<RWVec>>) -> impl Responder {
-        let subs = subs.into_inner();
+    pub async fn get_current_user_count(app: web::Data<Arc<Application>>) -> impl Responder {
+        let app = app.into_inner();
 
-        let subs = subs.read().await;
+        let subs = app.subs.read().await;
         subs.len().to_string()
     }
 
     /// Returns the current VAPID public key.
     #[get("/vapidPublicKey")]
-    pub async fn vapid_public_key(keys: web::Data<Keys>) -> impl Responder {
-        let arc = keys.into_inner();
-        let (_, public) = arc.deref();
+    pub async fn vapid_public_key(app: web::Data<Arc<Application>>) -> impl Responder {
+        let app = app.into_inner();
+        let public = app.keys.1.clone();
 
-        public.0.clone()
-    }
-
-    /// A clients registration.
-    #[derive(serde::Deserialize, serde::Serialize)]
-    pub struct Registration {
-        /// Push API endpoint info.
-        pub sub: SubscriptionInfo,
-        /// Users config. Tuple of (park, Rides to wait on).
-        pub config: (String, Vec<RideConfig>),
+        public.0
     }
 
     /// Adds the subscription to the vec of clients to push. Updates registration if already registered, as config can change.
     #[post("/register")]
     pub async fn register(
         subscription: web::Json<Registration>,
-        subs: web::Data<Arc<RWVec>>,
+        app: web::Data<Arc<Application>>,
     ) -> Result<impl Responder> {
         let subscription = subscription.into_inner();
 
-        //Check if already registered. Get as write to avoid race condition on index to insert to.
-        let mut wrt_subs = subs.write().await;
+        //Check if already registered
+        let mut wrt_subs = app.subs.write().await;
         let exists = wrt_subs.binary_search_by(|s| s.sub.endpoint.cmp(&subscription.sub.endpoint));
 
         match exists {
@@ -81,12 +66,12 @@ pub mod registration {
     #[post("/unregister")]
     pub async fn unregister(
         subscription: web::Json<SubscriptionInfo>,
-        subs: web::Data<Arc<RWVec>>,
+        app: web::Data<Arc<Application>>,
     ) -> impl Responder {
         let subscription = subscription.into_inner();
 
-        //Remove client based upon their endpoint, which is unique. Get as write to avoid race condition on index.
-        let mut wrt_subs = subs.write().await;
+        //Remove client based upon their endpoint, which is unique.
+        let mut wrt_subs = app.subs.write().await;
         let exists = wrt_subs.binary_search_by(|s| s.sub.endpoint.cmp(&subscription.endpoint));
 
         match exists {
@@ -104,14 +89,15 @@ pub mod registration {
 
 pub mod queue {
     use super::*;
+    use crate::app::Application;
     use queue_times::client::QueueTimesClient;
     use std::collections::BTreeMap;
 
     ///Responds with a JSON object of {name, park_url}, sorted by name.
     #[get("/allParks")]
-    pub async fn get_all_parks(client: web::Data<Arc<QClient>>) -> Result<impl Responder> {
-        let client = client.into_inner();
-        let res = client.get_park_urls().await;
+    pub async fn get_all_parks(app: web::Data<Arc<Application>>) -> Result<impl Responder> {
+        let app = app.into_inner();
+        let res = app.queue_client.get_park_urls().await;
 
         match res {
             Ok(mut map) => {
@@ -138,12 +124,12 @@ pub mod queue {
     /// `GET /parkWaitTimes?url=...`
     #[get("/parkWaitTimes")]
     pub async fn get_park_wait_times(
-        client: web::Data<Arc<QClient>>,
+        app: web::Data<Arc<Application>>,
         url: web::Query<UrlQuery>,
     ) -> impl Responder {
         use url::Url;
 
-        let client = client.into_inner();
+        let app = app.into_inner();
 
         //Validate url
         let url = Url::parse(url.into_inner().url.as_str());
@@ -167,7 +153,7 @@ pub mod queue {
         }
         let url = url.unwrap();
 
-        let res = client.get_ride_times(url).await;
+        let res = app.queue_client.get_ride_times(url).await;
 
         match res {
             Ok(mut times) => {
