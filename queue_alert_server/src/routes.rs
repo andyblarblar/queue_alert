@@ -17,6 +17,7 @@ pub type QClient = queue_times::client::CachedClient<queue_times::client::Client
 /// Routes for registering users to push.
 pub mod registration {
     use super::*;
+    use crate::models::RideConfig;
 
     /// Returns the current number of subscribed users.
     #[get("/userCount")]
@@ -41,11 +42,11 @@ pub mod registration {
     pub struct Registration {
         /// Push API endpoint info.
         pub sub: SubscriptionInfo,
-        /// The park the user is listening to.
-        pub park: String,
+        /// Users config. Tuple of (park, Rides to wait on).
+        pub config: (String, Vec<RideConfig>),
     }
 
-    /// Adds the subscription to the vec of clients to push. Does not duplicate registrations if already set.
+    /// Adds the subscription to the vec of clients to push. Updates registration if already registered, as config can change.
     #[post("/register")]
     pub async fn register(
         subscription: web::Json<Registration>,
@@ -58,11 +59,15 @@ pub mod registration {
         let exists = wrt_subs.binary_search_by(|s| s.sub.endpoint.cmp(&subscription.sub.endpoint));
 
         match exists {
-            //Already registered
-            Ok(_) => Ok(HttpResponse::Ok()),
+            //Already registered, update
+            Ok(idx) => {
+                log::info!("Updating existing user {}", subscription.sub.endpoint);
+                wrt_subs[idx] = subscription;
+                Ok(HttpResponse::Ok())
+            }
             //Register in sorted order
             Err(idx) => {
-                log::info!("Registered new user");
+                log::info!("Registered new user {}", subscription.sub.endpoint);
                 //Add client to vec of clients to send push to
                 wrt_subs.insert(idx, subscription);
 
@@ -117,9 +122,7 @@ pub mod queue {
                     .collect::<BTreeMap<String, String>>();
                 Ok(HttpResponse::Ok().json(map))
             }
-            Err(err) => {
-                return Ok(HttpResponse::InternalServerError().body(format!("{}", err)));
-            }
+            Err(err) => Ok(HttpResponse::InternalServerError().body(format!("{}", err))),
         }
     }
 
@@ -171,9 +174,7 @@ pub mod queue {
                 times.sort();
                 HttpResponse::Ok().json(times)
             }
-            Err(err) => {
-                return HttpResponse::InternalServerError().body(format!("{}", err));
-            }
+            Err(err) => HttpResponse::InternalServerError().body(format!("{}", err)),
         }
     }
 }

@@ -6,7 +6,8 @@
  * @file contains methods for accessing the queue alert api.
  */
 
-import { Err, Ok, Result } from "ts-results";
+import {Err, Ok, Result} from "ts-results";
+import {AlertConfig} from "./alertConfig";
 
 /**
  * Map of park name to its ride page url.
@@ -63,7 +64,7 @@ export default class QueueAlertAccess {
             return Err(res.status)
         }
     }
-    
+
     /**
      * Attempts to get the current number of connected users.
      *
@@ -88,7 +89,7 @@ export default class QueueAlertAccess {
     async getParkRideTimes(url: URL): Promise<Result<rideTime[], number>> {
 
         let req = '/parkWaitTimes?'
-        req += new URLSearchParams({ "url": url.toString() }).toString()
+        req += new URLSearchParams({"url": url.toString()}).toString()
 
         let res = await fetch(this.url + req.toString())
 
@@ -147,22 +148,18 @@ export default class QueueAlertAccess {
 
     /**
      * Registers this user with the queue alert backend, causing the server to send notifications.
-     * @param park The park this user will listen to.
+     * This can be used to update the config if already registered.
+     * @param config Rides we wish to listen to. The server will push when one of these triggers.
      * @return Ok if 200, Err if any other http code, returns that other number.
      */
-    async registerWithBackend(park: string): Promise<Result<null, number>> {
+    async registerWithBackend(config: AlertConfig): Promise<Result<null, number>> {
 
         //Err if not subbed
         if (this.sub == null) {
             return Err(1)
         }
-        //Don't register twice
-        if (this.isRegistered) {//This can actually be removed if its buggy, as the server will just ignore the request. It will add a lot to traffic though.
-            console.debug('already registered')
-            return Ok(null)
-        }
 
-        const body = JSON.stringify({ sub: this.sub, park: park });
+        const body = JSON.stringify({sub: this.sub, config: config});
         console.debug(`attempting to register with: ${JSON.stringify(body)}`)
 
         try {

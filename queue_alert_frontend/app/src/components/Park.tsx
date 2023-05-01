@@ -91,7 +91,7 @@ function Park() {
     }, [dispatch, oldConfig])
 
     //Callback to add ride
-    const onRideEnable = (userSelection: "Open" | "Closed" | number, rideName: string) => {
+    const onRideEnable = (userSelection: "Open" | "Closed" | { wait: number}, rideName: string) => {
         console.debug('on onEnable')
         //If this is the first ride selected in a new park, then change to this park.
         if (config[0] !== park) {
@@ -146,8 +146,8 @@ function Park() {
         }
         else {
             // Remove duplicated rides that sometimes pop up from the API
-            let unique_rides = [...new Set(rides)]
-            return unique_rides.map(r => {
+            let uniqueRides = [...new Set(rides)]
+            return uniqueRides.map(r => {
                 return (
                     <RideConfig rideInfo={r} onEnable={onRideEnable} onDisable={onRideDisable} key={r.name} />
                 )

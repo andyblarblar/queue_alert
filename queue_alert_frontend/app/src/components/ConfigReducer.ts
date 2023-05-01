@@ -91,7 +91,7 @@ export type action = {
     //Ride used for adding operations
     ride?: {
         rideName: string,
-        alertOn: "Open" | "Closed" | number
+        alertOn: "Open" | "Closed" | { wait: number }
     },
     park?: string,
     oldConfig?: AlertConfig

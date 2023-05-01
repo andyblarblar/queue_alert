@@ -18,7 +18,7 @@ import {createHandlerBoundToURL, precacheAndRoute} from 'workbox-precaching';
 import {registerRoute} from 'workbox-routing';
 import {CacheFirst, StaleWhileRevalidate} from 'workbox-strategies';
 
-import {AlertConfig, alertConfigMessageType, swMessage} from "./api/alertConfig";
+import {AlertConfig, alertConfigMessageType, rideConfig, swMessage} from "./api/alertConfig";
 import {Mutex} from "async-mutex";
 import {rideTime} from "./api/queueAlertAccess";
 import * as localforage from 'localforage'
@@ -134,32 +134,32 @@ function handlePush(payload: rideTime[]) {
     }
 
     return configMutex.runExclusive(async () => {
-        //Check times for all rides we're waiting on.
+        //Check times for all rides we're waiting on. The server will send a ride only if it will alert
         for (const [, rideConfigs] of Object.entries(config ?? [])) {
 
-            for (const rideConfig of rideConfigs as { rideName: string, alertOn: "Open" | "Closed" | number }[]) {
+            for (const rideConf of rideConfigs as rideConfig[]) {
                 //Attempt to find same ride from server
-                let serverRide = payload.find(r => r.name === rideConfig.rideName)
+                let serverRide = payload.find(r => r.name === rideConf.rideName)
 
                 //Skip if server didn't send ride/park
                 if (serverRide == null) continue
 
                 //Handle alert conditions
-                switch (rideConfig.alertOn) {
+                switch (rideConf.alertOn) {
                     case "Open":
                         if (serverRide.status !== "Closed") {
                             //Output current wait if we can
                             if (typeof serverRide.status !== "string") {
                                 await (self as any).registration.showNotification('Ride Alert', {
-                                    body: `${rideConfig.rideName} is Open with a wait of ${serverRide.status.Wait} minutes!`,
+                                    body: `${rideConf.rideName} is Open with a wait of ${serverRide.status.Wait} minutes!`,
                                     ...notificationConfig,
-                                    tag: `${rideConfig.rideName}`
+                                    tag: `${rideConf.rideName}`
                                 })
                             } else {
                                 await (self as any).registration.showNotification('Ride Alert', {
-                                    body: `${rideConfig.rideName} is Open!`,
+                                    body: `${rideConf.rideName} is Open!`,
                                     ...notificationConfig,
-                                    tag: `${rideConfig.rideName}`
+                                    tag: `${rideConf.rideName}`
                                 })
                             }
                         }
@@ -167,18 +167,18 @@ function handlePush(payload: rideTime[]) {
                     case "Closed":
                         if (serverRide.status === "Closed") {
                             await (self as any).registration.showNotification('Ride Alert', {
-                                body: `${rideConfig.rideName} is Closed!`,
+                                body: `${rideConf.rideName} is Closed!`,
                                 ...notificationConfig,
-                                tag: `${rideConfig.rideName}`
+                                tag: `${rideConf.rideName}`
                             })
                         }
                         break;
                     default: //Configured for a time
-                        if (typeof serverRide.status !== "string" && serverRide.status.Wait <= rideConfig.alertOn) {
+                        if (typeof serverRide.status !== "string" && serverRide.status.Wait <= rideConf.alertOn.wait) {
                             await (self as any).registration.showNotification('Ride Alert', {
-                                body: `${rideConfig.rideName}'s wait is ${serverRide.status.Wait} minutes!`,
+                                body: `${rideConf.rideName}'s wait is ${serverRide.status.Wait} minutes!`,
                                 ...notificationConfig,
-                                tag: `${rideConfig.rideName}`
+                                tag: `${rideConf.rideName}`
                             })
                         }
                         break;
