@@ -5,7 +5,7 @@ authors = ["Andy Ealovega <andrew@ealovega.dev>"]
 edition = "2018"
 
 [dependencies]
-web-push = { version = "^0.9.0", features = ["hyper-client"], default-features = false }
+web-push = { version = "^0.9.5", features = ["hyper-client"], default-features = false }
 queue_times = { path = "../queue_times", features = ["client"] }
 base64 = "^0.13.0"
 dashmap = "^5.4.0"

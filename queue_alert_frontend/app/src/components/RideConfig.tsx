@@ -12,13 +12,13 @@ import Switch from "react-switch"
 import useStateCallback from "../api/useEffectCallback"
 import { useConfig } from "./ConfigStore"
 
-type currentAlertOn = "Open" | "Closed" | number
+type currentAlertOn = "Open" | "Closed" | { wait: number} //TODO refactor all instances of this structure into one type
 
 type props = {
     /**The name of this ride*/
     rideInfo: rideTime,
     /**Called when config is enabled*/
-    onEnable: (userSelection: "Open" | "Closed" | number, rideName: string) => void,
+    onEnable: (userSelection: currentAlertOn, rideName: string) => void,
     /**Called when config is disabled*/
     onDisable: (rideName: string) => void,
 }
@@ -59,8 +59,8 @@ const RideConfig: React.FC<props> = ({ rideInfo, onEnable, onDisable }) => {
                         break;
 
                     default:
-                        onEnable(parseInt(event.target.value), rideInfo.name)
-                        setConfig(parseInt(event.target.value))
+                        onEnable({ wait: parseInt(event.target.value) }, rideInfo.name)
+                        setConfig({ wait: parseInt(event.target.value) })
                         break;
                 }
             }
@@ -79,13 +79,21 @@ const RideConfig: React.FC<props> = ({ rideInfo, onEnable, onDisable }) => {
                     break;
 
                 default:
-                    setConfig(parseInt(event.target.value))
+                    setConfig({ wait: parseInt(event.target.value) })
                     break;
             }
         }
 
+        // Need to flatten away wait to match select value type
+        let flattenedSelectedConfig
+        if (typeof switchSelectedConfig === "string") {
+            flattenedSelectedConfig = switchSelectedConfig
+        } else {
+            flattenedSelectedConfig = switchSelectedConfig?.wait
+        }
+
         return (
-            <select onChange={selectChange} value={switchSelectedConfig ?? 'none'}>
+            <select onChange={selectChange} value={flattenedSelectedConfig ?? 'none'}>
                 <option value="none">Select a time to alert on</option>
                 <option value="Open">Open</option>
                 <option value="Closed">Closed</option>

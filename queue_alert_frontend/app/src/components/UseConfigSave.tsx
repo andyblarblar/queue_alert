@@ -27,7 +27,7 @@ function UseConfigSave(onSave: ((config: AlertConfig) => void) | undefined) {
         //Sub if config is anything else
         else {
             let res1 = await client.subscribeUserToPush()
-            let res2 = await client.registerWithBackend(config[0])
+            let res2 = await client.registerWithBackend(config)
 
             if (res1.err) {
                 toast.error('Failed to save! Please enable notifications for this site.')

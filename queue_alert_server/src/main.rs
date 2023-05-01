@@ -13,6 +13,7 @@ use flate2::write::GzEncoder;
 use flate2::Compression;
 use iis::get_port;
 use queue_times::client::QueueTimesClient;
+use crate::models::RideStatus;
 use simplelog::{ConfigBuilder, LevelFilter};
 use web_push::{
     ContentEncoding, PartialVapidSignatureBuilder, VapidSignatureBuilder, WebPushClient,
@@ -111,13 +112,13 @@ async fn main() -> std::io::Result<()> {
             //Subs to remove after a send fails. Endpoints are unique, so they are used as an ID.
             let mut subs_to_remove: Vec<String> = Vec::new();
 
-            log::info!("pushing to {} clients", subs.len());
+            log::info!("checking if we should push to {} clients", subs.len());
 
-            //Push to all clients
+            //Push to all clients, if they have a ride ready
             for sub in subs.iter() {
-                let url = parks.get(&sub.park);
+                let url = parks.get(&sub.config.0);
                 if url.is_none() {
-                    log::error!("Submitted invalid park {}", sub.park);
+                    log::error!("Submitted invalid park {}", sub.config.0);
                     continue;
                 }
 
@@ -128,10 +129,32 @@ async fn main() -> std::io::Result<()> {
                     log::error!("While getting rides: {}", why);
                     continue;
                 }
+                let rides = rides.unwrap();
+
+                // Get all rides to send, which are all rides the client will alert on. This is done so we dont send a push where the client will not notify.
+                let rides = rides.iter()
+                    .filter_map(|r| sub.config.1.iter().find(|rc| rc.ride_name == r.name).map(|rc| (rc, r)))
+                    .filter(|(ride_conf, ride_stat)| {
+                        log::debug!("config: {:?} server_time: {:?}", ride_conf.alert_on, ride_stat.status);
+                        // Only keep rides the user will alert on
+                        match ride_conf.alert_on {
+                            RideStatus::Open => !matches!(ride_stat.status, queue_times::model::RideStatus::Closed),
+                            RideStatus::Closed => matches!(ride_stat.status, queue_times::model::RideStatus::Closed),
+                            RideStatus::Wait(conf_t) => matches!(ride_stat.status, queue_times::model::RideStatus::Wait(stat_t) if conf_t >= stat_t)
+                        }
+                })
+                    // Reduce back to the ride-statuses we want to send to the client
+                    .map(|(_, rs)| rs)
+                    .collect::<Vec<_>>();
+
+                // If nothing to send to client, continue.
+                if rides.is_empty() {
+                    continue
+                }
 
                 let mut builder = WebPushMessageBuilder::new(&sub.sub).unwrap();
 
-                let content = serde_json::to_string(&rides.unwrap()).unwrap();
+                let content = serde_json::to_string(&rides).unwrap();
 
                 //Compress JSON with gzip
                 let mut encoder = GzEncoder::new(Vec::new(), Compression::best()); //TODO we can prob reuse a buffer here

@@ -59,7 +59,7 @@ const ConfigTable: React.FC<props> = ({ onSave }) => {
                 saveNextRefresh.current = true
                 dispatch({
                     type: "removeRide",
-                    ride: { rideName: r.rideName, alertOn: 0 }
+                    ride: { rideName: r.rideName, alertOn: { wait: 0 } }
                 })
             }
 
@@ -112,7 +112,7 @@ function getProperAlertOnString(rideConfig: rideConfig) {
         return rideConfig.alertOn
     }
     else {
-        return `wait under ${rideConfig.alertOn} minutes`
+        return `wait under ${rideConfig.alertOn.wait} minutes`
     }
 }
 
