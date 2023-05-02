@@ -1,8 +1,8 @@
 [package]
 name = "queue_alert_server"
-version = "1.1.2"
+version = "2.0.0"
 authors = ["Andy Ealovega <andrew@ealovega.dev>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 web-push = { version = "^0.9.5", features = ["hyper-client"], default-features = false }
