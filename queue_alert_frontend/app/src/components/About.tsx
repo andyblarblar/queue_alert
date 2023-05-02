@@ -40,18 +40,8 @@ function About() {
             <div id="FAQ">FAQ</div>
 
             <Faq title="I'm on iOS and can't save!">
-                Unfortunately, Apple does not support web push notifications on iOS or Safari yet.
-                This means that Queue Alert is unable to operate. Because Apple is so protective of its app store,
-                I don't see this going away any time soon. Should this block ever be dropped however, Queue Alert
-                will work immediately.
-            </Faq>
-
-            <Faq title="I keep getting 'Website updated in the background' notifications!">
-                This is due to privacy features in the web push API. Whenever the app receives an update from the
-                server,
-                a notification must be shown. If there are no ride alerts to notify you with, this notification is used
-                as
-                a placeholder.
+                Until iOS 16.4, Apple did not support web push. If your Apple device is below this iOS version, you will
+                not be able to receive push notifications.
             </Faq>
 
             <Faq title="I keep getting 'Cannot connect to server' errors!">
