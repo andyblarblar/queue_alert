@@ -105,8 +105,10 @@ self.addEventListener('message', (event) => {
 
 /**
  * Locks write access to `config` when config is being read.
+ *
+ * IndexedDB does not have transaction isolation, so this is added just to be safe.
  */
-let configMutex: Mutex = new Mutex() //TODO remove this
+let configMutex: Mutex = new Mutex()
 
 /** Loads the config from the db if it exists. Will be null if not set. */
 function loadConfig() {
