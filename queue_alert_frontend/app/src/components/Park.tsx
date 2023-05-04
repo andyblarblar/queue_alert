@@ -6,18 +6,18 @@
  * @file Config page for a park.
  */
 
-import { useEffect, useRef, useState } from "react"
-import { useLocation, useParams } from "react-router"
-import { toast } from "react-toastify"
+import {useEffect, useRef, useState} from "react"
+import {useLocation, useParams} from "react-router"
+import {toast} from "react-toastify"
 import {AlertConfig, alertOption} from "../api/alertConfig"
-import { rideTime } from "../api/queueAlertAccess"
+import {rideTime} from "../api/queueAlertAccess"
 import ConfigSaveButton from "./ConfigSaveButton"
-import { useConfig } from "./ConfigStore"
+import {useConfig} from "./ConfigStore"
 import ConfigTable from "./configTable"
-import { useQaClient } from "./qaUrlStore"
+import {useQaClient} from "./qaUrlStore"
 import RideConfig from "./RideConfig"
 import _ from "lodash"
-import { useMediaQuery } from "react-responsive"
+import {useMediaQuery} from "react-responsive"
 import ServerError from "./Error"
 import QASpinner from "./QASpinner"
 
@@ -25,13 +25,13 @@ import QASpinner from "./QASpinner"
  * Config page for a park.
  */
 function Park() {
-    let { park } = useParams<{ park: string }>()
+    let {park} = useParams<{ park: string }>()
     park = park!.split('?')[0].replaceAll('-', ' ') //Remove query string and hyphens
     const parkUrl = useQuery().get('url')
 
-    const isMobile = useMediaQuery({ query: "(max-width: 1200px)" })
+    const isMobile = useMediaQuery({query: "(max-width: 1200px)"})
 
-    const { client } = useQaClient()
+    const {client} = useQaClient()
     const [error, setError] = useState(false)
     const [loaded, setLoaded] = useState(false)
 
@@ -54,27 +54,31 @@ function Park() {
     const [config, dispatch] = useConfig()
     const oldConfig = useRef(_.cloneDeep(config)) //Clone old config for diffing
 
-    const [saveBtnVisable, setSaveBtnVisable] = useState(false)
     //Manage toast state each update
     useEffect(() => {
         console.debug(`config is ${JSON.stringify(config[1])} oldconfig is ${JSON.stringify(oldConfig.current[1])}`)
 
         //Display save warning if not already visible and changes have been made.
         if (!_.isEqual(config[1], oldConfig.current[1]) && !toast.isActive(1234)) {
-            toast.warn('You have unsaved changes!', {
-                closeButton: false,
-                autoClose: false,
-                toastId: 1234,
-                draggable: false,
-                closeOnClick: false,
-                position: (isMobile ? 'bottom-right' : 'top-right')
-            })
-            setSaveBtnVisable(true)
+            toast.warn(
+                <div>
+                    <span className="toast-text">
+                        You have unsaved changes!
+                    </span>
+                    <ConfigSaveButton onSave={onSave} visable={true}/>
+                </div>
+                , {
+                    closeButton: false,
+                    autoClose: false,
+                    toastId: 1234,
+                    draggable: false,
+                    closeOnClick: false,
+                    position: (isMobile ? 'bottom-right' : 'top-right')
+                })
         }
         //Remove toast if changes are reverted.
         else if (_.isEqual(config[1], oldConfig.current[1]) && toast.isActive(1234)) {
-            toast.dismiss(1234)//TODO does this trigger a rerender? May be cause of double update. Not that thats an issue anymore.
-            setSaveBtnVisable(false)
+            toast.dismiss(1234)
         }
     }, [config, isMobile, oldConfig])
 
@@ -133,23 +137,21 @@ function Park() {
 
     if (error) {
         return (
-            <ServerError />
+            <ServerError/>
         )
     }
 
     function getRides() {
         if (rides.length === 0 && loaded) {
             return (<p className="park-norides">No rides to show :(</p>)
-        }
-        else if (!loaded) {
-            return (<QASpinner />)
-        }
-        else {
+        } else if (!loaded) {
+            return (<QASpinner/>)
+        } else {
             // Remove duplicated rides that sometimes pop up from the API
             let uniqueRides = [...new Set(rides)]
             return uniqueRides.map(r => {
                 return (
-                    <RideConfig rideInfo={r} onEnable={onRideEnable} onDisable={onRideDisable} key={r.name} />
+                    <RideConfig rideInfo={r} onEnable={onRideEnable} onDisable={onRideDisable} key={r.name}/>
                 )
             });
         }
@@ -158,15 +160,13 @@ function Park() {
     return (
         <div>
             <h1 id="parkprompt">Please configure your alerts for {park}:</h1>
-            <ConfigTable onSave={onSave} />
+            <ConfigTable onSave={onSave}/>
 
             <div className="rides-container">
                 {
                     getRides()
                 }
             </div>
-
-            <ConfigSaveButton onSave={onSave} visable={saveBtnVisable} />
         </div>
     )
 }

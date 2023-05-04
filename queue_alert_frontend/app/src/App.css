@@ -248,21 +248,15 @@ html {
 
 /***park page save btn***/
 .save-btn {
-  padding: 2vw;
+  padding-top: 2vw;
   width: fit-content;
   margin-left: auto;
   margin-right: auto;
 }
 
 .save-btn > button {
-  background-color: #fc9a5d;
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-  border: var(--border) groove 5px;
   max-width: max-content;
   cursor: pointer;
-  padding: 8vw;
-
-  font-size: 6vw;  
   font-family: 'Raleway', sans-serif;
   font-weight: 600;
 }
@@ -271,14 +265,6 @@ html {
   opacity: .8;
   
   transition: opacity 20ms;
-}
-
-/*make text bigger on mobile*/
-@media only screen and (min-width: 1200px){
-  .save-btn > button {
-    padding: 1vw;
-    font-size: 1vw;  
-  }
 }
 
 .park-norides {
@@ -390,4 +376,9 @@ html {
   100% {
       transform: rotate(360deg);
   }
+}
+
+/*** Toast ***/
+.toast-text {
+  font-family: 'Raleway', sans-serif;
 }
