@@ -131,8 +131,8 @@ function Park() {
 
     const onSave = (conf: AlertConfig) => {
         toast.dismiss(1234)
-        console.debug(`after save setting oldConf to ${conf}`)
-        oldConfig.current = _.cloneDeep(config)
+        console.debug(`after save setting oldConf to ${JSON.stringify(conf[1])}`)
+        oldConfig.current = _.cloneDeep(conf)
     }
 
     if (error) {
