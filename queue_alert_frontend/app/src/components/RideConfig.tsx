@@ -7,10 +7,9 @@
  */
 
 import React from "react"
-import { rideTime } from "../api/queueAlertAccess"
-import Switch from "react-switch"
+import {rideTime} from "../api/queueAlertAccess"
 import useStateCallback from "../api/useEffectCallback"
-import { useConfig } from "./ConfigStore"
+import {useConfig} from "./ConfigStore"
 import {alertOption} from "../api/alertConfig";
 
 type props = {
@@ -25,13 +24,11 @@ type props = {
 /**
  * Component that contains the controls for configuring a ride.
  */
-const RideConfig: React.FC<props> = ({ rideInfo, onEnable, onDisable }) => {
-    const [globalConfig, ] = useConfig()
+const RideConfig: React.FC<props> = ({rideInfo, onEnable, onDisable}) => {
+    const [globalConfig,] = useConfig()
 
     //Attempt to load already set config if it exists.
     const oldRideConfig = globalConfig[1].find(r2 => r2.rideName === rideInfo.name)
-    //Check the switch if already in use. This ties this switches state to the global config.
-    const switchChecked = oldRideConfig != null
 
     //Local config used for saving select box state. This is independent of the global config.
     const [switchSelectedConfig, setConfig] = useStateCallback<alertOption | undefined>(oldRideConfig?.alertOn)
@@ -41,44 +38,26 @@ const RideConfig: React.FC<props> = ({ rideInfo, onEnable, onDisable }) => {
         const opt = Array(80).fill(0).map((_, i) => (i + 1) * 5);
 
         const selectChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-            //If switching from one config to another while already enabled, swap configs immediately.
-            if (switchChecked) {
-                switch (event.target.value) {
-                    case "none":
-                        break;
-
-                    case "Open":
-                        onEnable('Open', rideInfo.name)
-                        setConfig("Open")
-                        break;
-
-                    case "Closed":
-                        onEnable("Closed", rideInfo.name)
-                        setConfig("Closed")
-                        break;
-
-                    default:
-                        onEnable({ wait: parseInt(event.target.value) }, rideInfo.name)
-                        setConfig({ wait: parseInt(event.target.value) })
-                        break;
-                }
-            }
-
-            //This will enable the switch, clicking it will set the config.
+            // Swap configs as soon as we select
             switch (event.target.value) {
                 case "none":
+                    onDisable(rideInfo.name)
+                    setConfig(undefined)
                     break;
 
                 case "Open":
+                    onEnable('Open', rideInfo.name)
                     setConfig("Open")
                     break;
 
                 case "Closed":
+                    onEnable("Closed", rideInfo.name)
                     setConfig("Closed")
                     break;
 
                 default:
-                    setConfig({ wait: parseInt(event.target.value) })
+                    onEnable({wait: parseInt(event.target.value)}, rideInfo.name)
+                    setConfig({wait: parseInt(event.target.value)})
                     break;
             }
         }
@@ -92,8 +71,10 @@ const RideConfig: React.FC<props> = ({ rideInfo, onEnable, onDisable }) => {
         }
 
         return (
+            //Select always matches our current state
             <select onChange={selectChange} value={flattenedSelectedConfig ?? 'none'}>
                 <option value="none">Select a time to alert on</option>
+                <option value="none">None</option>
                 <option value="Open">Open</option>
                 <option value="Closed">Closed</option>
                 {
@@ -105,24 +86,11 @@ const RideConfig: React.FC<props> = ({ rideInfo, onEnable, onDisable }) => {
         )
     }
 
-    /**Call the respective prop when switch is activated.*/
-    const onSwitchEnable = (checked: boolean, event: MouseEvent | React.SyntheticEvent<MouseEvent | KeyboardEvent, Event>, id: string) => {
-        if (checked) {
-            onEnable(switchSelectedConfig!, rideInfo.name)
-        }
-        else {
-            onDisable(rideInfo.name)
-        }
-    }
-
     return (
         <div className="rideconfig">
             <span className="rideconfig-ridename">{rideInfo.name}</span>
 
-            <Switch className="rideconfig-switch" offColor="#855846" uncheckedIcon={false} checkedIcon={<span style={{ marginLeft: "5px", opacity: "0.9" }}>🎢</span>} checked={switchChecked} disabled={switchSelectedConfig == null} onChange={onSwitchEnable}>
-            </Switch>
-
-            <br />
+            <br/>
 
             <div className="rideconfig-current-wait">
                 <span>Current wait: {typeof rideInfo.status === 'string' ? rideInfo.status : rideInfo.status.Wait} </span>
@@ -131,7 +99,7 @@ const RideConfig: React.FC<props> = ({ rideInfo, onEnable, onDisable }) => {
             <span className="rideconfig-alert">Alert on: </span>
             {getSelect()}
 
-            <br />
+            <br/>
         </div>
     )
 }
