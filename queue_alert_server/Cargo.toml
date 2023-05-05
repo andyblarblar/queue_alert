@@ -1,6 +1,6 @@
 [package]
 name = "queue_alert_server"
-version = "2.0.0"
+version = "2.1.0"
 authors = ["Andy Ealovega <andrew@ealovega.dev>"]
 edition = "2021"
 
@@ -9,10 +9,10 @@ web-push = { version = "^0.9.5", features = ["hyper-client"], default-features =
 queue_times = { path = "../queue_times", features = ["client"] }
 base64 = "^0.13.0"
 dashmap = "^5.4.0"
+thiserror = "1.0.40"
 url = "^2.2.2"
 serde = { version = "^1.0.126", features = ["derive"] }
 serde_json = "^1.0.64"
-timer = "^0.2.0"
 chrono = "^0.4.19"
 flate2 = "^1.0.20"
 
@@ -23,7 +23,10 @@ actix-service = "^2.0.2"
 actix-cors = "^0.6.4"
 
 tokio = { version = "^1", features = ["sync"] }
+tokio-stream = "0.1.14"
 iis = "^0.1.0"
+
+sqlx = { version = "0.7.0-alpha.2", features = [ "runtime-tokio", "sqlite" ] }
 
 log = "^0.4.14"
 simplelog = "^0.12.1"

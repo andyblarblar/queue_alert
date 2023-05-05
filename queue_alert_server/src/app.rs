@@ -1,10 +1,10 @@
-use crate::models::{Keys, Registration, RideStatus};
+use crate::models::{Keys, RideStatus};
+use crate::registration::RegistrationRepository;
 use flate2::write::GzEncoder;
 use flate2::Compression;
 use queue_times::client::QueueTimesClient;
 use std::io::Write;
 use std::time::Duration;
-use tokio::sync::RwLock;
 use web_push::{ContentEncoding, WebPushClient, WebPushError, WebPushMessageBuilder};
 
 /// Application state.
@@ -12,7 +12,7 @@ use web_push::{ContentEncoding, WebPushClient, WebPushError, WebPushMessageBuild
 /// Locks are fragmented across each field, so this struct does not need locking.
 pub struct Application {
     /// All client registrations
-    pub subs: RwLock<Vec<Registration>>,
+    pub subs: RegistrationRepository,
     /// Queue times scraper
     pub queue_client: queue_times::client::CachedClient<queue_times::client::Client>,
     /// Web push client
@@ -23,7 +23,7 @@ pub struct Application {
 
 impl Application {
     pub fn new(
-        subs: RwLock<Vec<Registration>>,
+        subs: RegistrationRepository,
         queue_client: queue_times::client::CachedClient<queue_times::client::Client>,
         push_client: WebPushClient,
         keys: Keys,
@@ -50,12 +50,8 @@ impl Application {
     /// Sends notifications to clients if their ride is ready.
     async fn push_to_clients(&self) {
         //Skip if no subscribers
-        {
-            let subs = self.subs.read().await;
-
-            if subs.is_empty() {
-                return;
-            }
+        if self.subs.get_current_user_count() == 0 {
+            return;
         }
 
         let parks = self.queue_client.get_park_urls().await;
@@ -66,15 +62,17 @@ impl Application {
         }
         let parks = parks.unwrap();
 
-        //Lock subscriptions vector until we finish
-        let subs = self.subs.read().await;
+        let subs = &self.subs;
         //Subs to remove after a send fails. Endpoints are unique, so they are used as an ID.
         let mut subs_to_remove: Vec<String> = Vec::new();
 
-        log::info!("checking if we should push to {} clients", subs.len());
+        log::info!(
+            "checking if we should push to {} clients",
+            subs.get_current_user_count()
+        );
 
         //Push to all clients, if they have a ride ready
-        for sub in subs.iter() {
+        for sub in subs.cache.iter() {
             let url = parks.get(&sub.config.0);
             if url.is_none() {
                 log::error!("Submitted invalid park {}", sub.config.0);
@@ -160,10 +158,12 @@ impl Application {
             }
         }
 
-        //Drop reader and obtain write lock to remove old subs.
-        std::mem::drop(subs);
-        let mut subs = self.subs.write().await;
-
-        subs.retain(|sub| !subs_to_remove.contains(&sub.sub.endpoint));
+        // Remove bad endpoints
+        for rm_sub in subs_to_remove {
+            match subs.remove_registration(&rm_sub).await {
+                Ok(_) => log::info!("Removed stale endpoint {}", rm_sub),
+                Err(err) => log::error!("Error: {} when removing endpoints", err),
+            }
+        }
     }
 }
