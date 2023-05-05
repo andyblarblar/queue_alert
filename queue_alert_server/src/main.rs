@@ -3,6 +3,7 @@
  */
 
 use crate::app::Application;
+use crate::registration::RegistrationRepository;
 use actix_files::Files;
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
@@ -11,11 +12,12 @@ use iis::get_port;
 use simplelog::{ConfigBuilder, LevelFilter};
 use std::io::Read;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 use web_push::{PartialVapidSignatureBuilder, VapidSignatureBuilder, WebPushClient};
 
 mod app;
+mod error;
 mod models;
+mod registration;
 mod routes;
 
 #[tokio::main]
@@ -57,8 +59,8 @@ async fn main() -> std::io::Result<()> {
     }
     let keys = keys.unwrap();
 
-    //All subscribed users, to be sorted by endpoint to allow for binary searches
-    let subs = RwLock::new(vec![]);
+    //Load db
+    let subs = RegistrationRepository::init().await.unwrap();
     //Shared caching queue times client
     let queue_client = queue_times::client::CachedClient::default();
     //Client for sending push notifications

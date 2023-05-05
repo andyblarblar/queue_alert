@@ -18,8 +18,8 @@ pub mod registration {
     pub async fn get_current_user_count(app: web::Data<Arc<Application>>) -> impl Responder {
         let app = app.into_inner();
 
-        let subs = app.subs.read().await;
-        subs.len().to_string()
+        let subs = app.subs.get_current_user_count();
+        subs.to_string()
     }
 
     /// Returns the current VAPID public key.
@@ -36,29 +36,14 @@ pub mod registration {
     pub async fn register(
         subscription: web::Json<Registration>,
         app: web::Data<Arc<Application>>,
-    ) -> Result<impl Responder> {
+    ) -> impl Responder {
         let subscription = subscription.into_inner();
 
-        //Check if already registered
-        let mut wrt_subs = app.subs.write().await;
-        let exists = wrt_subs.binary_search_by(|s| s.sub.endpoint.cmp(&subscription.sub.endpoint));
-
-        match exists {
-            //Already registered, update
-            Ok(idx) => {
-                log::info!("Updating existing user {}", subscription.sub.endpoint);
-                wrt_subs[idx] = subscription;
-                Ok(HttpResponse::Ok())
-            }
-            //Register in sorted order
-            Err(idx) => {
-                log::info!("Registered new user {}", subscription.sub.endpoint);
-                //Add client to vec of clients to send push to
-                wrt_subs.insert(idx, subscription);
-
-                Ok(HttpResponse::Ok())
-            }
+        match app.subs.add_or_update_registration(subscription).await {
+            Ok(_) => HttpResponse::Ok(),
+            Err(_) => HttpResponse::InternalServerError(),
         }
+        .finish()
     }
 
     /// Removes the subscription from the server, stopping push notifications. Clients still need to unsub from the
@@ -70,19 +55,12 @@ pub mod registration {
     ) -> impl Responder {
         let subscription = subscription.into_inner();
 
-        //Remove client based upon their endpoint, which is unique.
-        let mut wrt_subs = app.subs.write().await;
-        let exists = wrt_subs.binary_search_by(|s| s.sub.endpoint.cmp(&subscription.endpoint));
-
-        match exists {
-            Ok(idx) => {
-                wrt_subs.remove(idx);
-                HttpResponse::Ok().finish()
-            }
-            //sub isnt registered
-            Err(_) => {
+        match app.subs.remove_registration(&subscription.endpoint).await {
+            Ok(true) => HttpResponse::Ok().finish(),
+            Ok(false) => {
                 HttpResponse::BadRequest().body("Subscription was not registered with queue alert")
             }
+            Err(_) => HttpResponse::InternalServerError().finish(),
         }
     }
 }
