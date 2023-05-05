@@ -63,7 +63,7 @@ impl<'a> RegistrationRepository {
                     let alerton: &str = r.get("alerton");
 
                     let alerton = match alerton {
-                        "opened" => RideStatus::Open,
+                        "open" => RideStatus::Open,
                         "closed" => RideStatus::Closed,
                         "wait" => {
                             let wait: u16 = r.get("wait");
