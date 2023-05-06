@@ -42,6 +42,9 @@ function About() {
             <Faq title="I'm on iOS and can't save!">
                 Until iOS 16.4, Apple did not support web push. If your Apple device is below this iOS version, you will
                 not be able to receive push notifications.
+                
+                If your device is on 16.4, then make sure to add this site to the home screen. If you attempt to save when
+                accessing this site as an app, you should receive a native notification permission request. 
             </Faq>
 
             <Faq title="I keep getting 'Cannot connect to server' errors!">

@@ -8,7 +8,7 @@ import { useConfig } from "./ConfigStore"
 import { useQaClient } from "./qaUrlStore"
 
 /**
- * Hook that returns a function that will persist the current config on the SW when called. 
+ * Hook that returns a function that will persist the current config on the SW when called.
  * This function may or may not succeed, but will not throw. It instead prompts a correct failure toast.
  * @param onSave Function to be called with the new config if config is saved successfully.
  * @returns Closure that saves current config on call.
@@ -30,7 +30,7 @@ function UseConfigSave(onSave: ((config: AlertConfig) => void) | undefined) {
             let res2 = await client.registerWithBackend(config)
 
             if (res1.err) {
-                toast.error('Failed to save! Please enable notifications for this site.')
+                toast.error('Failed to save! Please enable notifications for this site. If you are on an iOS >= 16.4, add this app to the home screen and access it from there.')
                 return
             }
             if (res2.err) {

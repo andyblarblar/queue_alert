@@ -1,15 +1,24 @@
 # **![Q](https://github.com/andyblarblar/queue_alert/blob/master/queue_alert_frontend/app/public/icons/android-icon-36x36.png)ueue Alert**
-Queue Alert is a Progressive Web App (PWA) that will send notifications whenever an amusement ride reaches a certain wait-time threshold. 
-This app was inspired by a particularly windy trip to Cedar Point, where I spent all day checking Queue Times on my phone while waiting for SteVe to open. 
-Queue Alert aims to be a mobile first, streamlined, and ergonomic solution to automate checking wait times such that you can spend less time checking your phone, 
-and more time enjoying your visit.
+Queue Alert is a Progressive Web App (PWA) that provides the ability to receive push notifications when an amusement ride is under a certain wait time 🎢
+
+**Features:**
+- **Flexible notifications** - Configure alerts on rides opening, closing, or reaching a certain wait time. This is a feature not found in many official apps!
+- **Cross-platform** - The webapp works on Safari, Chrome, and Firefox on both iOS and Android
+- **Native Alerts** - Native push notifications are used (via web push), so Queue Alert can be managed like any other app
+- **One app to rule them all** - Queue Alert can be used with a massive variety of parks, removing the need to install an app for each park you visit
+
+## Minimum requirements
+> Note: iOS requires this site to be added as an app to the home screen for notifications to work.
+
+- Chrome 50 or Firefox 44 on Android or desktop OS
+- iOS 16.4 with any browser on iOS
 
 ## Overview
-Queue Alert is split between its frontend and backend server. The backend is an actix web server that handles scraping of data from queue times and sending of that data to registered
-push endpoints. This is done using the queue_times crate found in this repo, and [rust web push](https://github.com/pimeys/rust-web-push).
+Queue Alert is split between its frontend and backend server. The backend is an actix-web API that takes in user configurations and push endpoints, and sends relevant wait times
+to the client when their configurations conditions are met. It uses a SQLite database for persistence.
 
-The frontend is a Reactjs PWA, which registers with the backend to enable the push notifications at the heart of Queue Alert. It is designed to be mobile first, and is optimised
-for quick painless interactions to minimise time spent in the app. 
+The frontend is a Reactjs PWA, where the user creates their configuration. It is designed to be straightforward and easy to use, since the main feature of Queue Alert is that
+the real information is delivered in push notifications asynchronously.
 
 ## Building
 To build the app for yourself, you're going to first need to change the endpoint in [app.tsx](https://github.com/andyblarblar/queue_alert/blob/206a423645503f2500622e37cb44984b6f9a7f6b/queue_alert_frontend/app/src/App.tsx#L72)
