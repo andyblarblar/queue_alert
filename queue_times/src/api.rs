@@ -57,7 +57,7 @@ impl QueueTimesClient for ApiClient {
                         .unwrap()
                         .join(&format!("{}/", id))
                         .unwrap()
-                        .join("queue_times/")
+                        .join("queue_times")
                         .unwrap(),
                 );
             }
@@ -68,9 +68,7 @@ impl QueueTimesClient for ApiClient {
 
     async fn get_ride_times(&self, park_url: Url) -> crate::error::Result<Vec<RideTime>> {
         // Scraper uses the html page, we want the raw json
-        let mut park_url = park_url.to_string();
-        park_url.pop();
-        let park_url = park_url + ".json";
+        let park_url = park_url.to_string() + ".json";
 
         let rides_json = self
             .reqwest_client
@@ -123,7 +121,7 @@ impl QueueTimesClient for ApiClient {
 #[cfg(test)]
 mod test {
     use crate::api::ApiClient;
-    use crate::client::QueueTimesClient;
+    use crate::client::{Client, QueueTimesClient};
 
     #[tokio::test]
     async fn test_parks() {
@@ -132,7 +130,7 @@ mod test {
 
         assert_eq!(
             parks["Cedar Point"].as_str(),
-            "https://queue-times.com/en-US/parks/50/queue_times/"
+            "https://queue-times.com/en-US/parks/50/queue_times"
         );
     }
 
@@ -147,5 +145,28 @@ mod test {
             .unwrap();
 
         assert!(!rides.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_equivalent() {
+        let cli = ApiClient::new();
+        let cli2 = Client::new();
+
+        let parks1 = cli.get_park_urls().await.unwrap();
+        let parks2 = cli2.get_park_urls().await.unwrap();
+
+        assert_eq!(parks1["Cedar Point"], parks2["Cedar Point"]);
+
+        let rides1 = cli
+            .get_ride_times(parks1["Cedar Point"].clone())
+            .await
+            .unwrap();
+
+        let rides2 = cli2
+            .get_ride_times(parks2["Cedar Point"].clone())
+            .await
+            .unwrap();
+
+        assert_eq!(rides1, rides2);
     }
 }

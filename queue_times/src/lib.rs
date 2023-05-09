@@ -8,7 +8,7 @@
 //! Most consumers of this crate will want to use [`client::CachedClient`] or another client from [`client`].
 //! This is enabled with the feature `client`.
 //!
-//! ```rust
+//! ```no-run
 //! use queue_times::client::{Client, QueueTimesClient, CachedClient};
 //!
 //! let client = CachedClient::default(); //Replace with `Client::new()` to remove caching if needed

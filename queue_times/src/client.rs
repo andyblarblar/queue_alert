@@ -5,7 +5,7 @@
 //! Contains implementations of [`reqwest`] based clients for parsing queue times.
 //!
 //! Almost all use cases will want to use [`CachedClient`] like so:
-//! ```
+//! ```no-run
 //! use queue_times::client::{Client, QueueTimesClient, CachedClient};
 //!
 //! let client = CachedClient::default(); //Replace with `Client::new()` to remove caching if needed
@@ -67,7 +67,7 @@ pub trait QueueTimesClient {
 
 /// Provides a queue times client that uses the generic parser without caching.
 ///
-/// ```
+/// ```no-run
 /// use queue_times::client::{Client, QueueTimesClient};
 ///
 /// let mut client = Client::new();
@@ -139,7 +139,7 @@ impl QueueTimesClient for Client {
 /// while the cache updates in the background.
 ///
 /// # Example
-/// ```
+/// ```no-run
 /// use queue_times::client::{Client, QueueTimesClient, CachedClient};
 ///
 /// let client = Client::new();

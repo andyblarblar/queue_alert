@@ -26,7 +26,7 @@ pub trait ParkParser {
 /// Parser that can currently parse all parks.
 ///
 /// # Example
-/// ```
+/// ```no-run
 /// use queue_times::parser::{GenericParkParser, ParkParser};
 /// //Gets Cedar Point's ride page
 /// let html_str = reqwest::blocking::get("https://queue-times.com/en-US/parks/50/queue_times")?.text()?;
@@ -133,7 +133,7 @@ impl ParkParser for GenericParkParser {
 ///
 /// # Example
 ///
-/// ```
+/// ```no-run
 /// use queue_times::parser::FrontPageParser;
 /// let html = reqwest::blocking::get("https://queue-times.com/en-US/parks/")?.text()?;
 ///
