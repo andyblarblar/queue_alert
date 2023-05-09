@@ -20,6 +20,7 @@ import _ from "lodash"
 import {useMediaQuery} from "react-responsive"
 import ServerError from "./Error"
 import QASpinner from "./QASpinner"
+import {SearchBar} from "./Search";
 
 /**
  * Config page for a park.
@@ -34,6 +35,8 @@ function Park() {
     const {client} = useQaClient()
     const [error, setError] = useState(false)
     const [loaded, setLoaded] = useState(false)
+    // Searchbar filter
+    const [filter, setfilter] = useState<string | null>(null)
 
     //Get all rides for park
     const [rides, setRides] = useState<rideTime[]>([])
@@ -149,7 +152,7 @@ function Park() {
         } else {
             // Remove duplicated rides that sometimes pop up from the API
             let uniqueRides = [...new Set(rides)]
-            return uniqueRides.map(r => {
+            return uniqueRides.filter(r => filter == null || r.name.search(RegExp(`.*${filter}.*`, "i")) !== -1).map(r => {
                 return (
                     <RideConfig rideInfo={r} onEnable={onRideEnable} onDisable={onRideDisable} key={r.name}/>
                 )
@@ -161,6 +164,10 @@ function Park() {
         <div>
             <h1 id="parkprompt">Please configure your alerts for {park}:</h1>
             <ConfigTable onSave={onSave}/>
+
+            <div className="search-container-container">
+                <SearchBar onChange={s => setfilter(s)} placeholderText={"Search rides"}/>
+            </div>
 
             <div className="rides-container">
                 {

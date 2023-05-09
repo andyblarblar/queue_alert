@@ -1,8 +1,7 @@
+@charset "UTF-8";
 /*
  * Copyright (c) 2021. Andrew Ealovega
  */
-
-@charset "UTF-8";
 
 /*Color scheme*/ 
 :root {
@@ -21,6 +20,7 @@ html {
 
 .app-container {
   height: 100%;
+  width: 100%;
 }
 
 .bar-container {
@@ -381,4 +381,52 @@ html {
 /*** Toast ***/
 .toast-text {
   font-family: 'Raleway', sans-serif;
+}
+
+/*** Searchbar ***/
+
+/*input element itself*/
+.searchbar {
+  background-color: var(--second-layer);
+  border-style: none;
+
+  font-family: 'Raleway', sans-serif;
+  font-size: large;
+  font-weight: bold;
+}
+
+.searchbar::placeholder {
+  color: var(--highlight)
+}
+
+/*magnifying glass*/
+.search-icon {
+  width: fit-content;
+  padding-right: 5px;
+  padding-top: 2px;
+}
+
+/*div combining the icon and input element*/
+.search-container {
+  background-color: var(--second-layer);
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  border: var(--border) groove 2px;
+  max-width: max-content;
+
+  padding: 15px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 10px;
+  margin-bottom: 20px;
+
+  border-radius: 7px;
+
+  display: flex;
+}
+
+/*holds the container, centering*/
+.search-container-container {
+  align-items: center;
+  display: flex;
+  width: 100%;
 }
