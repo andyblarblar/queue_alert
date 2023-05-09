@@ -282,7 +282,7 @@ mod tests {
     async fn test_client() {
         let client = Client::new();
         let parks = client.get_park_urls().await.unwrap();
-        println!("CP URL {}", parks.get("Cedar Point").unwrap().to_string());
+        println!("CP URL {}", parks.get("Cedar Point").unwrap());
         let cedar_point_waits = client
             .get_ride_times(parks.get("Cedar Point").unwrap().to_owned())
             .await
@@ -304,7 +304,7 @@ mod tests {
         let client = Client::new();
         let client = CachedClient::new(client);
         let parks = client.get_park_urls().await.unwrap();
-        println!("CP URL {}", parks.get("Cedar Point").unwrap().to_string());
+        println!("CP URL {}", parks.get("Cedar Point").unwrap());
 
         //Repeat to test cache consistency
         let cedar_point_waits = client

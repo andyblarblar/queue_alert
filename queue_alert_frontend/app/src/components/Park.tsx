@@ -151,7 +151,7 @@ function Park() {
             return (<QASpinner/>)
         } else {
             // Remove duplicated rides that sometimes pop up from the API
-            let uniqueRides = [...new Set(rides)]
+            let uniqueRides = rides.filter((v, i, a) => (a as any).findLastIndex((e: rideTime) => e.name === v.name) == i)
             return uniqueRides.filter(r => filter == null || r.name.search(RegExp(`.*${filter}.*`, "i")) !== -1).map(r => {
                 return (
                     <RideConfig rideInfo={r} onEnable={onRideEnable} onDisable={onRideDisable} key={r.name}/>

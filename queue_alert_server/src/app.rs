@@ -14,7 +14,7 @@ pub struct Application {
     /// All client registrations
     pub subs: RegistrationRepository,
     /// Queue times scraper
-    pub queue_client: queue_times::client::CachedClient<queue_times::client::Client>,
+    pub queue_client: queue_times::client::CachedClient<queue_times::api::ApiClient>,
     /// Web push client
     pub push_client: WebPushClient,
     /// ECDH keys used for vapid
@@ -24,7 +24,7 @@ pub struct Application {
 impl Application {
     pub fn new(
         subs: RegistrationRepository,
-        queue_client: queue_times::client::CachedClient<queue_times::client::Client>,
+        queue_client: queue_times::client::CachedClient<queue_times::api::ApiClient>,
         push_client: WebPushClient,
         keys: Keys,
     ) -> Self {

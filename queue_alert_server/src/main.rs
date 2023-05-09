@@ -62,7 +62,7 @@ async fn main() -> std::io::Result<()> {
     //Load db
     let subs = RegistrationRepository::init().await.unwrap();
     //Shared caching queue times client
-    let queue_client = queue_times::client::CachedClient::default();
+    let queue_client = queue_times::client::CachedClient::new(queue_times::api::ApiClient::new());
     //Client for sending push notifications
     let push_client = WebPushClient::new().unwrap();
 
@@ -143,7 +143,7 @@ mod test {
         encoder.write_all(content.as_bytes()).unwrap();
         let content = encoder.finish().unwrap();
         //URLbase64 encode so the browser accepts the bytes
-        let content = base64::encode(&content);
+        let content = base64::encode(content);
 
         println!("encoded: {}", content);
 
