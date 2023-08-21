@@ -12,7 +12,9 @@ use iis::get_port;
 use simplelog::{ConfigBuilder, LevelFilter};
 use std::io::Read;
 use std::sync::Arc;
-use web_push::{PartialVapidSignatureBuilder, VapidSignatureBuilder, WebPushClient};
+use web_push::{
+    HyperWebPushClient, PartialVapidSignatureBuilder, VapidSignatureBuilder,
+};
 
 mod app;
 mod error;
@@ -64,9 +66,14 @@ async fn main() -> std::io::Result<()> {
     //Shared caching queue times client
     let queue_client = queue_times::client::CachedClient::new(queue_times::api::ApiClient::new());
     //Client for sending push notifications
-    let push_client = WebPushClient::new().unwrap();
+    let push_client = HyperWebPushClient::new();
 
-    let app = Arc::new(Application::new(subs, queue_client, push_client, keys));
+    let app = Arc::new(Application::new(
+        subs,
+        queue_client,
+        Box::new(push_client),
+        keys,
+    ));
     let tokio_app = app.clone();
 
     // Start task that checks client configs and sends push notifications on a timer

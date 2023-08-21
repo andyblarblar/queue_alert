@@ -16,7 +16,7 @@ pub struct Application {
     /// Queue times scraper
     pub queue_client: queue_times::client::CachedClient<queue_times::api::ApiClient>,
     /// Web push client
-    pub push_client: WebPushClient,
+    pub push_client: Box<dyn WebPushClient + Send + Sync>,
     /// ECDH keys used for vapid
     pub keys: Keys,
 }
@@ -25,7 +25,7 @@ impl Application {
     pub fn new(
         subs: RegistrationRepository,
         queue_client: queue_times::client::CachedClient<queue_times::api::ApiClient>,
-        push_client: WebPushClient,
+        push_client: Box<dyn WebPushClient + Send + Sync>,
         keys: Keys,
     ) -> Self {
         Self {
@@ -112,7 +112,7 @@ impl Application {
                 continue;
             }
 
-            let mut builder = WebPushMessageBuilder::new(&sub.sub).unwrap();
+            let mut builder = WebPushMessageBuilder::new(&sub.sub);
 
             let content = serde_json::to_string(&rides).unwrap();
 
