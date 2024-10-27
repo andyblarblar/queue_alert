@@ -22,7 +22,7 @@ actix-http = "^3.3.1"
 actix-service = "^2.0.2"
 actix-cors = "^0.6.4"
 
-tokio = { version = "^1", features = ["sync"] }
+tokio = { version = "^1", features = ["sync", "rt-multi-thread"] }
 tokio-stream = "0.1.14"
 iis = "^0.1.0"
 

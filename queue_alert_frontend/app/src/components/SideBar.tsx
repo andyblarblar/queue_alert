@@ -76,7 +76,7 @@ function shareSiteIfPossible() {
     }
     //Fallback to clipboard and prompt toast announcing such.
     else if ("clipboard" in navigator) {
-        navigator.clipboard.writeText(`https://qalert.ealovega.dev`).then()
+        (navigator as Navigator).clipboard.writeText(`https://qalert.ealovega.dev`).then()
         toast.success('Copied link to clipboard!')
     }
 }

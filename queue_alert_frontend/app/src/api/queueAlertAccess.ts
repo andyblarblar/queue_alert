@@ -129,7 +129,7 @@ export default class QueueAlertAccess {
             console.log('Received new PushSubscription: ', JSON.stringify(sub));
             this.sub = sub
         } catch (err) {
-            return Err(err)
+            return Err(err as Error)
         }
 
         return Ok(null);

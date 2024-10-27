@@ -47,7 +47,7 @@ const ConfigTable: React.FC<props> = ({ onSave }) => {
         }
         //Fallback to clipboard and prompt toast announcing such.
         else if ("clipboard" in navigator) {
-            navigator.clipboard.writeText(`https://qalert.ealovega.dev/share?config=${JSON.stringify(config)}`).then()
+            (navigator as Navigator).clipboard.writeText(`https://qalert.ealovega.dev/share?config=${JSON.stringify(config)}`).then()
             toast.success('Copied config link to clipboard!')
         }
     }
