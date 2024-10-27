@@ -111,7 +111,7 @@ fn load_private_key() -> std::io::Result<(
     models::PublicKey,
     PartialVapidSignatureBuilder,
 )> {
-    let mut file = std::fs::File::open("./private_key.pem")?;
+    let mut file = std::fs::File::open("./secrets/private_key.pem")?;
     let mut str = String::new();
 
     file.read_to_string(&mut str)?;
